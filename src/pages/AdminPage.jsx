@@ -81,6 +81,22 @@ export default function AdminPage() {
     link.click();
   };
 
+  const exportProductionCSV = () => {
+    const header = 'Pedido,Jogador,Número,Modelo,Cor,Tamanho,Qtd\n';
+    const rows = orders
+      .filter(o => o.status === 'aprovado' || o.status === 'quitado')
+      .flatMap(o => (o.camisas || []).map(c => 
+        `${o.codigo},"${o.nome}",${o.numero},${c.modelo},${c.cor},${c.tamanho},${c.qtd}`
+      ))
+      .join('\n');
+    
+    const blob = new Blob(['\uFEFF' + header + rows], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `tabela_producao_${new Date().getTime()}.csv`;
+    link.click();
+  };
+
   const filteredOrders = filter === 'todos' ? orders : orders.filter(o => o.status === filter);
 
   // Stats
@@ -215,10 +231,17 @@ export default function AdminPage() {
 
       {tab === 'grafica' && (
         <div className="animate-fade-in card" style={{ overflowX: 'auto' }}>
-          <h2 className="card-title"><div className="dot" /> Tabela de Produção (Gráfica)</h2>
-          <p style={{ color: 'var(--texto2)', fontSize: 13, marginBottom: 16 }}>
-            Lista detalhada de todas as camisas aprovadas ou quitadas. Pronto para imprimir.
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 16 }}>
+            <div>
+              <h2 className="card-title" style={{ marginBottom: 4 }}><div className="dot" /> Tabela de Produção (Gráfica)</h2>
+              <p style={{ color: 'var(--texto2)', fontSize: 13 }}>
+                Lista detalhada das camisas aprovadas/quitadas.
+              </p>
+            </div>
+            <button className="btn btn-primary btn-sm" style={{ padding: '8px 16px', background: 'var(--dourado)', color: '#000', border: '1px solid var(--dourado-light)' }} onClick={exportProductionCSV}>
+              <Download size={16} /> Baixar CSV para Gráfica
+            </button>
+          </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left', minWidth: 600 }}>
             <thead>
               <tr style={{ background: 'var(--cinza)', borderBottom: '2px solid var(--roxo-light)' }}>
