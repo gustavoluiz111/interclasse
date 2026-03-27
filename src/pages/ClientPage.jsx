@@ -16,11 +16,12 @@ const PIX_KEY = '76596b6d-8faa-4d4d-8d40-b7e261b11cf3';
 const SIZES = ['PP', 'P', 'M', 'G', 'GG', 'XG'];
 
 // Each model has its own photo + color embedded (clicking photo = selects model+cor)
+const BASE_URL = import.meta.env.BASE_URL;
 const MODELS = [
-  { id: 'Roxa',   cor: 'Roxa',   label: 'ROXA',   desc: 'Camisa Roxa Napoli',   img: '/roxo.jpeg',   accent: '#7C3AED' },
-  { id: 'Rosa',   cor: 'Rosa',   label: 'ROSA',   desc: 'Camisa Rosa Napoli',   img: '/rosa.jpeg',   accent: '#EC4899' },
-  { id: 'Preta',  cor: 'Preta',  label: 'PRETA',  desc: 'Camisa Preta Napoli',  img: '/preta.jpeg',  accent: '#888' },
-  { id: 'Branca', cor: 'Branca', label: 'BRANCA', desc: 'Camisa Branca Napoli', img: '/branco.jpeg', accent: '#D4AF37' },
+  { id: 'Roxa',   cor: 'Roxa',   label: 'ROXA',   desc: 'Camisa Roxa Napoli',   img: `${BASE_URL}roxo.jpeg`,   accent: '#7C3AED' },
+  { id: 'Rosa',   cor: 'Rosa',   label: 'ROSA',   desc: 'Camisa Rosa Napoli',   img: `${BASE_URL}rosa.jpeg`,   accent: '#EC4899' },
+  { id: 'Preta',  cor: 'Preta',  label: 'PRETA',  desc: 'Camisa Preta Napoli',  img: `${BASE_URL}preta.jpeg`,  accent: '#888' },
+  { id: 'Branca', cor: 'Branca', label: 'BRANCA', desc: 'Camisa Branca Napoli', img: `${BASE_URL}branco.jpeg`, accent: '#D4AF37' },
 ];
 
 const emptyShirt = () => ({ modelo: '', cor: '', tamanho: '', qtd: 1 });
@@ -401,7 +402,7 @@ export default function ClientPage() {
               background: '#fff', padding: 14, borderRadius: 16, display: 'inline-block',
               marginBottom: 18, boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
             }}>
-              <img src="/pix.jpg" alt="QR Code PIX" style={{ width: 200, height: 200, objectFit: 'contain', display: 'block' }} />
+              <img src={`${import.meta.env.BASE_URL}pix.jpg`} alt="QR Code PIX" style={{ width: 200, height: 200, objectFit: 'contain', display: 'block' }} />
             </div>
             <div style={{
               background: 'var(--cinza2)', border: '1px solid var(--cinza3)',
