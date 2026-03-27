@@ -1,4 +1,4 @@
-import { ref, push, get, update } from "firebase/database";
+import { ref, push, get, update, remove, set } from "firebase/database";
 import { db } from "./config";
 
 // ─── Helper ────────────────────────────────────────────────────────────────────
@@ -82,6 +82,19 @@ export const updateOrderPayment = async (id, valorPagoAdicional) => {
   ];
 
   await update(oRef, { valorPago: novoValorPago, saldo: novoSaldo, status: novoStatus, historico });
+};
+
+// ─── Delete Order (Admin) ──────────────────────────────────────────────────────
+export const deleteOrder = async (id) => {
+  const oRef = ref(db, `orders/${id}`);
+  await remove(oRef);
+  return true;
+};
+
+// ─── Delete ALL Orders (Danger - Utility) ──────────────────────────────────────
+export const deleteAllOrders = async () => {
+  await set(ref(db, 'orders'), null);
+  return true;
 };
 
 // ─── Upload Comprovante ────────────────────────────────────────────────────────

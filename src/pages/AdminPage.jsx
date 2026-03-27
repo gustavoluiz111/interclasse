@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchOrders, updateOrderStatus, updateOrderPayment } from '../firebase/api';
+import { fetchOrders, updateOrderStatus, updateOrderPayment, deleteOrder, deleteAllOrders } from '../firebase/api';
 import { RefreshCcw, LogOut, Download, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export default function AdminPage() {
@@ -54,6 +54,20 @@ export default function AdminPage() {
     loadData();
   };
 
+  const apagar = async (id) => {
+    if (!window.confirm("ATENÇÃO: Deseja EXCLUIR definitivamente este pedido? Esta ação não pode ser desfeita.")) return;
+    await deleteOrder(id);
+    loadData();
+  };
+
+  const apagarTodos = async () => {
+    if (!window.confirm("PERIGO: Deseja APAGAR TODOS os pedidos do banco de dados?")) return;
+    const pwd = prompt("Digite a senha de administrador para confirmar a exclusão de tudo:");
+    if (pwd !== '121415gugu' && pwd !== 'asaph') return alert("Senha incorreta. Ação cancelada.");
+    await deleteAllOrders();
+    loadData();
+  };
+
   const exportCSV = () => {
     const header = 'Código,Nome,Número,Tamanho,Modelo,Cor,Qtd,Total(R$),Pago(R$),Saldo(R$),Status,Data\n';
     const rows = orders.map(p => 
@@ -97,7 +111,7 @@ export default function AdminPage() {
 
       {tab === 'pedidos' && (
         <div className="animate-fade-in">
-          <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 5 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 5, alignItems: 'center' }}>
             {['todos', 'analise', 'aprovado', 'quitado', 'recusado'].map(f => (
               <button 
                 key={f} 
@@ -108,6 +122,7 @@ export default function AdminPage() {
                 {f.toUpperCase()}
               </button>
             ))}
+            <button className="btn btn-danger btn-sm" style={{ marginLeft: 'auto', flexShrink: 0 }} onClick={apagarTodos}>LIXEIRA (Apagar Tudo)</button>
           </div>
 
           {loading ? <p style={{ textAlign: 'center', padding: 40, color: 'var(--texto2)' }}>Carregando pedidos...</p> : 
@@ -148,6 +163,14 @@ export default function AdminPage() {
                 {o.comprovanteUrl && !o.comprovanteUrl.startsWith('data:image') && o.comprovanteAnexado !== false && (
                    <span style={{fontSize: 12, color: 'var(--dourado-light)', padding: '6px 0'}}>Possui comprovante (PDF/Local)</span>
                 )}
+                
+                <button 
+                  className="btn btn-danger btn-sm" 
+                  style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid #ef4444', color: '#ef4444' }} 
+                  onClick={() => apagar(o.id)}
+                >
+                  🗑️ Excluir
+                </button>
               </div>
             </div>
            ))}
