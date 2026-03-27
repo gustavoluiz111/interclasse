@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Camisas Interclasse — 3º Ano</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root {
+  --roxo: #6B21A8;
+  --roxo-light: #9333EA;
+  --rosa: #EC4899;
+  --rosa-light: #F472B6;
+  --azul: #1D4ED8;
+  --azul-light: #3B82F6;
+  --dourado: #D97706;
+  --dourado-light: #F59E0B;
+  --preto: #0F0F0F;
+  --branco: #FAFAFA;
+  --cinza: #1C1C1C;
+  --cinza2: #2A2A2A;
+  --cinza3: #3A3A3A;
+  --texto: #E8E8E8;
+  --texto2: #A0A0A0;
+  --fonte-display: 'Bebas Neue', cursive;
+  --fonte-body: 'Barlow', sans-serif;
+  --fonte-cond: 'Barlow Condensed', sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--preto);color:var(--texto);font-family:var(--fonte-body);min-height:100vh;overflow-x:hidden;}
+
+.header{background:linear-gradient(135deg,var(--roxo) 0%,#1a0533 50%,var(--preto) 100%);padding:0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 40px,rgba(255,255,255,0.02) 40px,rgba(255,255,255,0.02) 41px);}
+.header-inner{position:relative;z-index:1;padding:28px 24px 20px;}
+.header-top{display:flex;align-items:center;gap:12px;margin-bottom:4px;}
+.badge-ano{background:var(--dourado);color:var(--preto);font-family:var(--fonte-cond);font-size:11px;font-weight:700;letter-spacing:2px;padding:3px 10px;border-radius:2px;text-transform:uppercase;}
+.header h1{font-family:var(--fonte-display);font-size:clamp(36px,8vw,58px);letter-spacing:2px;line-height:0.95;color:var(--branco);}
+.header h1 span{color:var(--dourado-light);}
+.header-sub{font-family:var(--fonte-cond);font-size:13px;letter-spacing:3px;color:var(--roxo-light);text-transform:uppercase;margin-top:8px;}
+.cores-strip{display:flex;height:4px;margin-top:20px;}
+.cores-strip div{flex:1;}
+
+.nav{display:flex;background:var(--cinza);border-bottom:1px solid var(--cinza3);overflow-x:auto;scrollbar-width:none;}
+.nav::-webkit-scrollbar{display:none;}
+.nav-btn{background:none;border:none;color:var(--texto2);font-family:var(--fonte-cond);font-size:13px;letter-spacing:1.5px;text-transform:uppercase;padding:14px 20px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s;}
+.nav-btn:hover{color:var(--texto);}
+.nav-btn.active{color:var(--dourado-light);border-bottom-color:var(--dourado);}
+
+.page{display:none;padding:20px 16px 80px;max-width:720px;margin:0 auto;}
+.page.active{display:block;}
+
+.card{background:var(--cinza);border:1px solid var(--cinza3);border-radius:12px;padding:20px;margin-bottom:16px;}
+.card-title{font-family:var(--fonte-cond);font-size:18px;letter-spacing:1px;color:var(--dourado-light);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.card-title .dot{width:8px;height:8px;border-radius:50%;background:var(--dourado);}
+
+.form-group{margin-bottom:14px;}
+label{display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--texto2);margin-bottom:6px;font-weight:600;}
+input,select,textarea{width:100%;background:var(--cinza2);border:1px solid var(--cinza3);color:var(--texto);font-family:var(--fonte-body);font-size:15px;padding:11px 14px;border-radius:8px;outline:none;transition:border .2s;}
+input:focus,select:focus,textarea:focus{border-color:var(--roxo-light);}
+select option{background:var(--cinza2);}
+
+.modelos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.modelo-card{background:var(--cinza2);border:2px solid var(--cinza3);border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s;}
+.modelo-card:hover{border-color:var(--roxo-light);}
+.modelo-card.selected{border-color:var(--dourado);background:rgba(217,119,6,0.1);}
+.modelo-icon{font-size:32px;margin-bottom:8px;}
+.modelo-nome{font-family:var(--fonte-cond);font-size:14px;letter-spacing:1px;color:var(--texto);}
+.modelo-desc{font-size:11px;color:var(--texto2);margin-top:3px;}
+
+.cores-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.cor-btn{display:flex;align-items:center;gap:7px;background:var(--cinza2);border:2px solid var(--cinza3);border-radius:20px;padding:6px 12px;cursor:pointer;transition:all .2s;font-size:13px;}
+.cor-btn:hover{border-color:var(--texto2);}
+.cor-btn.selected{border-color:var(--dourado);}
+.cor-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
+
+.pagto-opcoes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.pagto-card{background:var(--cinza2);border:2px solid var(--cinza3);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;text-align:center;}
+.pagto-card:hover{border-color:var(--roxo-light);}
+.pagto-card.selected{border-color:var(--dourado);background:rgba(217,119,6,0.1);}
+.pagto-valor{font-family:var(--fonte-display);font-size:26px;color:var(--dourado-light);}
+.pagto-label{font-size:12px;color:var(--texto2);margin-top:4px;}
+
+.qr-box{background:var(--cinza2);border-radius:12px;padding:24px;text-align:center;margin:16px 0;}
+.qr-wrapper{background:#fff;border-radius:10px;padding:16px;display:inline-block;margin-bottom:12px;}
+.pix-key-display{background:var(--cinza);border:1px solid var(--cinza3);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:14px;color:var(--dourado-light);word-break:break-all;margin-bottom:10px;}
+.copy-btn{background:var(--roxo);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:var(--fonte-cond);font-size:14px;letter-spacing:1px;cursor:pointer;transition:background .2s;}
+.copy-btn:hover{background:var(--roxo-light);}
+.copy-btn.copied{background:var(--dourado);}
+
+.upload-area{border:2px dashed var(--cinza3);border-radius:10px;padding:30px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px;}
+.upload-area:hover{border-color:var(--roxo-light);}
+.upload-area.has-file{border-color:var(--dourado);background:rgba(217,119,6,0.05);}
+.upload-icon{font-size:36px;margin-bottom:8px;}
+.upload-text{font-size:13px;color:var(--texto2);}
+#file-input{display:none;}
+.preview-img{max-width:100%;border-radius:8px;margin-top:10px;}
+
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-family:var(--fonte-cond);font-size:16px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;font-weight:700;}
+.btn-primary{background:linear-gradient(135deg,var(--roxo),var(--rosa));color:#fff;}
+.btn-primary:hover{opacity:0.9;transform:translateY(-1px);}
+.btn-secondary{background:var(--cinza2);border:1px solid var(--cinza3);color:var(--texto);}
+.btn-danger{background:#7f1d1d;color:#fff;border:none;}
+.btn-success{background:#14532d;color:#fff;border:none;}
+.btn-sm{width:auto;padding:7px 14px;font-size:12px;border-radius:6px;}
+
+.saldo-box{background:linear-gradient(135deg,rgba(107,33,168,0.3),rgba(29,78,216,0.3));border:1px solid var(--roxo);border-radius:12px;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.saldo-item{text-align:center;}
+.saldo-valor{font-family:var(--fonte-display);font-size:28px;}
+.saldo-label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--texto2);}
+.verde{color:#4ade80;}
+.vermelho{color:#f87171;}
+.amarelo{color:var(--dourado-light);}
+
+.status-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:600;}
+.status-pendente{background:rgba(245,158,11,0.15);color:var(--dourado-light);border:1px solid var(--dourado);}
+.status-analise{background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid var(--azul-light);}
+.status-aprovado{background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid #16a34a;}
+.status-recusado{background:rgba(248,113,113,0.15);color:#f87171;border:1px solid #b91c1c;}
+.status-quitado{background:rgba(217,119,6,0.15);color:var(--dourado-light);border:1px solid var(--dourado);}
+
+.admin-lock{text-align:center;padding:60px 20px;}
+.lock-icon{font-size:56px;margin-bottom:16px;}
+.admin-login-card{max-width:340px;margin:0 auto;}
+.admin-header{background:linear-gradient(135deg,#3b0764,#1e1b4b);border-radius:12px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;}
+.admin-badge{background:var(--dourado);color:var(--preto);font-family:var(--fonte-cond);font-size:11px;letter-spacing:2px;padding:3px 10px;border-radius:2px;}
+
+.pedido-item{background:var(--cinza2);border:1px solid var(--cinza3);border-radius:10px;padding:14px;margin-bottom:10px;}
+.pedido-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.pedido-nome{font-family:var(--fonte-cond);font-size:16px;letter-spacing:0.5px;}
+.pedido-info{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px;color:var(--texto2);}
+.pedido-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.comprovante-thumb{width:60px;height:60px;border-radius:6px;object-fit:cover;border:1px solid var(--cinza3);cursor:pointer;}
+
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
+.stat-card{background:var(--cinza2);border-radius:10px;padding:16px;text-align:center;border:1px solid var(--cinza3);}
+.stat-num{font-family:var(--fonte-display);font-size:36px;line-height:1;}
+.stat-label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--texto2);margin-top:4px;}
+.progress-bar{height:6px;background:var(--cinza3);border-radius:3px;margin-top:6px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--roxo),var(--rosa));border-radius:3px;}
+
+.export-btn{display:flex;align-items:center;gap:12px;background:var(--cinza2);border:1px solid var(--cinza3);border-radius:10px;padding:16px;cursor:pointer;transition:all .2s;width:100%;margin-bottom:10px;text-align:left;}
+.export-btn:hover{border-color:var(--dourado);background:rgba(217,119,6,0.05);}
+.export-icon{font-size:28px;flex-shrink:0;}
+.export-info{flex:1;}
+.export-nome{font-family:var(--fonte-cond);font-size:15px;letter-spacing:0.5px;}
+.export-desc{font-size:12px;color:var(--texto2);margin-top:2px;}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--cinza2);border:1px solid var(--dourado);border-radius:10px;padding:12px 20px;font-size:14px;z-index:9999;transition:transform .3s;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+.success-screen{text-align:center;padding:40px 20px;}
+.success-icon{font-size:64px;margin-bottom:16px;animation:pop .4s ease;}
+@keyframes pop{0%{transform:scale(0)}80%{transform:scale(1.1)}100%{transform:scale(1)}}
+.success-title{font-family:var(--fonte-display);font-size:36px;color:var(--dourado-light);margin-bottom:8px;}
+.success-sub{color:var(--texto2);font-size:15px;line-height:1.6;}
+
+@media(max-width:420px){
+  .modelos-grid{grid-template-columns:1fr;}
+  .pagto-opcoes{grid-template-columns:1fr;}
+  .stats-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="badge-ano">3º Ano EM · 2025</div>
+    </div>
+    <h1>CAMISAS<br/><span>INTERCLASSE</span></h1>
+    <div class="header-sub">Faça seu pedido · Acompanhe · Pague</div>
+  </div>
+  <div class="cores-strip">
+    <div style="background:#6B21A8"></div>
+    <div style="background:#EC4899"></div>
+    <div style="background:#111"></div>
+    <div style="background:#1D4ED8"></div>
+    <div style="background:#D97706"></div>
+    <div style="background:#E5E5E5"></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('pedido')">Fazer Pedido</button>
+  <button class="nav-btn" onclick="showPage('meu-pedido')">Meu Pedido</button>
+  <button class="nav-btn" onclick="showPage('admin-gate')">Admin</button>
+</nav>
+
+<!-- PÁGINA: FAZER PEDIDO -->
+<div class="page active" id="page-pedido">
+
+  <div id="form-pedido">
+    <div class="card">
+      <div class="card-title"><div class="dot"></div>Escolha o modelo</div>
+      <div class="modelos-grid">
+        <div class="modelo-card" onclick="selecionarModelo(this,'Casa')" id="m-Casa">
+          <div class="modelo-icon">👕</div>
+          <div class="modelo-nome">CASA</div>
+          <div class="modelo-desc">Camisa principal</div>
+        </div>
+        <div class="modelo-card" onclick="selecionarModelo(this,'Fora')" id="m-Fora">
+          <div class="modelo-icon">👕</div>
+          <div class="modelo-nome">FORA</div>
+          <div class="modelo-desc">Camisa visitante</div>
+        </div>
+        <div class="modelo-card" onclick="selecionarModelo(this,'Goleiro')" id="m-Goleiro">
+          <div class="modelo-icon">🧤</div>
+          <div class="modelo-nome">GOLEIRO</div>
+          <div class="modelo-desc">Exclusiva</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><div class="dot"></div>Cor da camisa</div>
+      <div class="cores-grid">
+        <div class="cor-btn" onclick="selecionarCor(this,'Roxa')"><div class="cor-dot" style="background:#6B21A8"></div>Roxa</div>
+        <div class="cor-btn" onclick="selecionarCor(this,'Rosa')"><div class="cor-dot" style="background:#EC4899"></div>Rosa</div>
+        <div class="cor-btn" onclick="selecionarCor(this,'Preta')"><div class="cor-dot" style="background:#333;border:1px solid #666"></div>Preta</div>
+        <div class="cor-btn" onclick="selecionarCor(this,'Azul')"><div class="cor-dot" style="background:#1D4ED8"></div>Azul</div>
+        <div class="cor-btn" onclick="selecionarCor(this,'Dourada')"><div class="cor-dot" style="background:#D97706"></div>Dourada</div>
+        <div class="cor-btn" onclick="selecionarCor(this,'Branca')"><div class="cor-dot" style="background:#E5E5E5;border:1px solid #555"></div>Branca</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><div class="dot"></div>Seus dados</div>
+      <div class="form-group">
+        <label>Nome completo</label>
+        <input type="text" id="inp-nome" placeholder="Como vai aparecer na camisa"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label>Número</label>
+          <input type="number" id="inp-numero" placeholder="Ex: 10" min="1" max="99"/>
+        </div>
+        <div class="form-group">
+          <label>Tamanho</label>
+          <select id="inp-tamanho">
+            <option value="">Escolha</option>
+            <option>P</option><option>M</option><option>G</option><option>GG</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Quantidade</label>
+        <input type="number" id="inp-qtd" placeholder="1" min="1" max="5" value="1"/>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><div class="dot"></div>Forma de pagamento</div>
+      <div style="text-align:center;margin-bottom:14px;">
+        <span style="font-size:13px;color:var(--texto2);">Total:</span>
+        <span id="valor-calc" style="font-family:var(--fonte-display);font-size:32px;color:var(--dourado-light);margin-left:8px;">R$ 25,00</span>
+      </div>
+      <div class="pagto-opcoes">
+        <div class="pagto-card" onclick="selecionarPagto(this,'1x')" id="p-1x">
+          <div class="pagto-valor">R$ 25</div>
+          <div class="pagto-label">À vista (1×)</div>
+        </div>
+        <div class="pagto-card" onclick="selecionarPagto(this,'2x')" id="p-2x">
+          <div class="pagto-valor">2× R$ 12,50</div>
+          <div class="pagto-label">Parcelado</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="irParaPagamento()">Continuar para o PIX →</button>
+  </div>
+
+  <!-- TELA PIX -->
+  <div id="tela-pix" style="display:none;">
+    <div class="card">
+      <div class="card-title"><div class="dot"></div>Pagar via PIX</div>
+      <div class="qr-box">
+        <p style="font-size:13px;color:var(--texto2);margin-bottom:16px;">Escaneie o QR code ou copie a chave</p>
+        <div class="qr-wrapper"><div id="qrcode"></div></div>
+        <div class="pix-key-display">📱 (81) 98471-6376</div>
+        <button class="copy-btn" id="btn-copy" onclick="copiarChave()">Copiar chave PIX</button>
+        <p style="font-size:12px;color:var(--texto2);margin-top:12px;">
+          Valor: <strong id="pix-valor" style="color:var(--dourado-light)">R$ 25,00</strong>
+          &nbsp;·&nbsp;<span id="pix-parcela" style="color:var(--texto2)">Pagamento único</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><div class="dot"></div>Anexar comprovante</div>
+      <p style="font-size:13px;color:var(--texto2);margin-bottom:14px;">Após pagar, envie o print ou foto do comprovante</p>
+      <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+        <div class="upload-icon" id="upload-icon">📎</div>
+        <div class="upload-text" id="upload-text">Toque para selecionar o comprovante<br/><span style="font-size:11px;opacity:0.6">JPG, PNG ou PDF</span></div>
+        <img id="preview-img" class="preview-img" style="display:none;"/>
+      </div>
+      <input type="file" id="file-input" accept="image/*,application/pdf" onchange="previewFile(this)"/>
+    </div>
+
+    <button class="btn btn-primary" onclick="enviarPedido()">Enviar pedido ✓</button>
+    <button class="btn btn-secondary" style="margin-top:8px;" onclick="voltarForm()">← Voltar</button>
+  </div>
+
+  <!-- SUCESSO -->
+  <div id="tela-sucesso" style="display:none;">
+    <div class="success-screen">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">Pedido enviado!</div>
+      <div class="success-sub">Comprovante enviado para análise.<br/>Guarde seu código para acompanhar.</div>
+      <div style="background:var(--cinza2);border-radius:10px;padding:16px;margin:20px 0;text-align:left;">
+        <p style="font-size:12px;color:var(--texto2);margin-bottom:6px;letter-spacing:1px;text-transform:uppercase;">Código do pedido</p>
+        <p id="cod-pedido" style="font-family:monospace;font-size:22px;color:var(--dourado-light);letter-spacing:3px;"></p>
+      </div>
+      <button class="btn btn-secondary" onclick="novoPedido()">Fazer outro pedido</button>
+    </div>
+  </div>
+</div>
+
+<!-- PÁGINA: MEU PEDIDO -->
+<div class="page" id="page-meu-pedido">
+  <div class="card">
+    <div class="card-title"><div class="dot"></div>Buscar meu pedido</div>
+    <div class="form-group">
+      <label>Código do pedido</label>
+      <input type="text" id="inp-codigo" placeholder="Ex: IC-2025-0001" style="text-transform:uppercase;letter-spacing:2px;"/>
+    </div>
+    <button class="btn btn-primary" onclick="buscarPedido()">Buscar pedido</button>
+  </div>
+  <div id="resultado-pedido" style="display:none;">
+    <div class="card">
+      <div class="card-title"><div class="dot"></div>Detalhes do pedido</div>
+      <div id="pedido-detalhe"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PÁGINA: ADMIN GATE -->
+<div class="page" id="page-admin-gate">
+  <div class="admin-lock">
+    <div class="lock-icon">🔐</div>
+    <div class="admin-login-card">
+      <div class="admin-header">
+        <div>
+          <div class="admin-badge">SISTEMA ASAPH</div>
+          <p style="font-size:13px;color:#a78bfa;margin-top:6px;">Acesso restrito ao administrador</p>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Senha de acesso</label>
+        <input type="password" id="inp-senha" placeholder="••••••••" onkeypress="if(event.key==='Enter')loginAdmin()"/>
+      </div>
+      <button class="btn btn-primary" onclick="loginAdmin()">Entrar no painel</button>
+      <p id="erro-senha" style="color:#f87171;font-size:13px;margin-top:10px;display:none;text-align:center;">Senha incorreta.</p>
+    </div>
+  </div>
+</div>
+
+<!-- PÁGINA: ADMIN PAINEL -->
+<div class="page" id="page-admin">
+  <div class="admin-header" style="border-radius:12px;margin-bottom:16px;">
+    <div style="flex:1;">
+      <div class="admin-badge">ADMIN — SISTEMA ASAPH</div>
+      <p style="font-size:12px;color:#a78bfa;margin-top:4px;">Painel de controle completo</p>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="logoutAdmin()">Sair</button>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none;">
+    <button class="btn btn-primary btn-sm" onclick="adminTab('pedidos',this)" id="atab-pedidos">Pedidos</button>
+    <button class="btn btn-secondary btn-sm" onclick="adminTab('dashboard',this)" id="atab-dashboard">Dashboard</button>
+    <button class="btn btn-secondary btn-sm" onclick="adminTab('exportar',this)" id="atab-exportar">Exportar</button>
+  </div>
+
+  <!-- TAB PEDIDOS -->
+  <div id="atab-content-pedidos">
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+      <button class="btn btn-secondary btn-sm" onclick="filtrarStatus('todos')" id="f-todos" style="border-color:var(--dourado);">Todos</button>
+      <button class="btn btn-secondary btn-sm" onclick="filtrarStatus('analise')" id="f-analise">Em análise</button>
+      <button class="btn btn-secondary btn-sm" onclick="filtrarStatus('aprovado')" id="f-aprovado">Aprovado</button>
+      <button class="btn btn-secondary btn-sm" onclick="filtrarStatus('quitado')" id="f-quitado">Quitado</button>
+      <button class="btn btn-secondary btn-sm" onclick="filtrarStatus('recusado')" id="f-recusado">Recusado</button>
+    </div>
+    <div id="lista-pedidos"></div>
+  </div>
+
+  <!-- TAB DASHBOARD -->
+  <div id="atab-content-dashboard" style="display:none;">
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="card">
+      <div class="card-title"><div class="dot"></div>Por modelo</div>
+      <div id="stats-modelos"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="dot"></div>Por tamanho</div>
+      <div id="stats-tamanhos"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="dot"></div>Por cor</div>
+      <div id="stats-cores"></div>
+    </div>
+  </div>
+
+  <!-- TAB EXPORTAR -->
+  <div id="atab-content-exportar" style="display:none;">
+    <div class="card">
+      <div class="card-title"><div class="dot"></div>Exportar dados</div>
+      <button class="export-btn" onclick="exportarCSV()">
+        <div class="export-icon">📊</div>
+        <div class="export-info">
+          <div class="export-nome">Planilha completa (.csv)</div>
+          <div class="export-desc">Todos os pedidos — abre no Excel e Google Sheets</div>
+        </div>
+        <span style="color:var(--dourado-light);font-size:20px;">↓</span>
+      </button>
+      <button class="export-btn" onclick="exportarPendentes()">
+        <div class="export-icon">⏳</div>
+        <div class="export-info">
+          <div class="export-nome">Pendentes de pagamento</div>
+          <div class="export-desc">Só quem ainda tem saldo em aberto</div>
+        </div>
+        <span style="color:var(--dourado-light);font-size:20px;">↓</span>
+      </button>
+      <button class="export-btn" onclick="exportarRelatorio()">
+        <div class="export-icon">📋</div>
+        <div class="export-info">
+          <div class="export-nome">Relatório financeiro (.txt)</div>
+          <div class="export-desc">Totais, arrecadado, saldo geral</div>
+        </div>
+        <span style="color:var(--dourado-light);font-size:20px;">↓</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SENHA_ADMIN = '121415gugu';
+const PIX_CHAVE = '81984716376';
+const PRECO = 25;
+
+let pedidos = JSON.parse(localStorage.getItem('ic_pedidos') || 'null') || gerarDadosDemo();
+let selectedModelo = '', selectedCor = '', selectedPagto = '', comprovanteData = '';
+let adminLogado = false, filtroAtual = 'todos';
+
+function gerarDadosDemo(){
+  return [
+    {codigo:'IC-2025-0001',nome:'João Silva',numero:'10',tamanho:'M',modelo:'Casa',cor:'Roxa',qtd:1,total:25,pagamento:'2x',valorPago:12.5,saldo:12.5,status:'aprovado',comprovante:'',data:'27/03/2025',historico:[{data:'27/03/2025',acao:'Pedido enviado'},{data:'27/03/2025',acao:'Pagamento aprovado'}]},
+    {codigo:'IC-2025-0002',nome:'Maria Santos',numero:'7',tamanho:'P',modelo:'Fora',cor:'Rosa',qtd:1,total:25,pagamento:'1x',valorPago:25,saldo:0,status:'quitado',comprovante:'',data:'27/03/2025',historico:[{data:'27/03/2025',acao:'Pedido enviado'},{data:'27/03/2025',acao:'Quitado — pagamento completo'}]},
+    {codigo:'IC-2025-0003',nome:'Pedro Costa',numero:'1',tamanho:'G',modelo:'Goleiro',cor:'Preta',qtd:1,total:25,pagamento:'1x',valorPago:0,saldo:25,status:'analise',comprovante:'',data:'27/03/2025',historico:[{data:'27/03/2025',acao:'Pedido enviado — aguardando aprovação'}]}
+  ];
+}
+
+function salvar(){ localStorage.setItem('ic_pedidos', JSON.stringify(pedidos)); }
+
+// NAV
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  let pageId = id==='admin-gate' ? (adminLogado?'page-admin':'page-admin-gate') : 'page-'+id;
+  const pg = document.getElementById(pageId);
+  if(pg) pg.classList.add('active');
+  const navIdxMap = {'pedido':0,'meu-pedido':1,'admin-gate':2};
+  const btns = document.querySelectorAll('.nav-btn');
+  if(navIdxMap[id]!==undefined) btns[navIdxMap[id]].classList.add('active');
+  if(pageId==='page-admin'){ renderListaPedidos(); renderDashboard(); }
+}
+
+// SELEÇÕES
+function selecionarModelo(el,nome){ document.querySelectorAll('.modelo-card').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); selectedModelo=nome; atualizarValor(); }
+function selecionarCor(el,cor){ document.querySelectorAll('.cor-btn').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); selectedCor=cor; }
+function selecionarPagto(el,tipo){ document.querySelectorAll('.pagto-card').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); selectedPagto=tipo; }
+function atualizarValor(){ const qtd=parseInt(document.getElementById('inp-qtd').value)||1; document.getElementById('valor-calc').textContent='R$ '+(qtd*PRECO).toFixed(2).replace('.',','); }
+document.getElementById('inp-qtd').addEventListener('input',atualizarValor);
+
+// PIX
+function irParaPagamento(){
+  const nome=document.getElementById('inp-nome').value.trim();
+  const numero=document.getElementById('inp-numero').value.trim();
+  const tamanho=document.getElementById('inp-tamanho').value;
+  if(!selectedModelo){toast('Escolha um modelo de camisa');return;}
+  if(!selectedCor){toast('Escolha uma cor');return;}
+  if(!nome){toast('Informe seu nome');return;}
+  if(!numero){toast('Informe o número da camisa');return;}
+  if(!tamanho){toast('Escolha o tamanho');return;}
+  if(!selectedPagto){toast('Escolha a forma de pagamento');return;}
+  const qtd=parseInt(document.getElementById('inp-qtd').value)||1;
+  const total=qtd*PRECO;
+  const valorParcela=selectedPagto==='2x'?total/2:total;
+  document.getElementById('pix-valor').textContent='R$ '+valorParcela.toFixed(2).replace('.',',');
+  document.getElementById('pix-parcela').textContent=selectedPagto==='2x'?'1ª de 2 parcelas':'Pagamento único';
+  document.getElementById('form-pedido').style.display='none';
+  document.getElementById('tela-pix').style.display='block';
+  gerarQR(valorParcela, nome);
+}
+
+function gerarQR(valor, nome){
+  document.getElementById('qrcode').innerHTML='';
+  const payload = gerarPixPayload(PIX_CHAVE, valor.toFixed(2), nome.substring(0,25));
+  try{
+    new QRCode(document.getElementById('qrcode'),{text:payload,width:200,height:200,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+  }catch(e){
+    document.getElementById('qrcode').innerHTML='<div style="width:200px;height:200px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#666;text-align:center;padding:10px;">QR Code PIX gerado</div>';
+  }
+}
+
+function gerarPixPayload(chave, valor, nome){
+  const campo=(id,val)=>String(id).padStart(2,'0')+String(val.length).padStart(2,'0')+val;
+  const mai = campo('00','BR.GOV.BCB.PIX')+campo('01',chave);
+  const payload = campo('00','01')+campo('26',mai)+campo('52','0000')+campo('53','986')+campo('54',String(parseFloat(valor).toFixed(2)))+campo('58','BR')+campo('59',nome.substring(0,25).trim()||'PAGADOR')+campo('60','Recife')+campo('62',campo('05','***'));
+  return payload+'6304'+calcCRC16(payload+'6304');
+}
+
+function calcCRC16(str){
+  let crc=0xFFFF;
+  for(let i=0;i<str.length;i++){crc^=str.charCodeAt(i)<<8;for(let j=0;j<8;j++)crc=(crc&0x8000)?(crc<<1)^0x1021:crc<<1;}
+  return ((crc&0xFFFF).toString(16).toUpperCase()).padStart(4,'0');
+}
+
+function copiarChave(){
+  navigator.clipboard.writeText(PIX_CHAVE).then(()=>{
+    const btn=document.getElementById('btn-copy');
+    btn.textContent='✓ Copiado!';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copiar chave PIX';btn.classList.remove('copied');},2500);
+  }).catch(()=>toast('Chave PIX: '+PIX_CHAVE));
+}
+
+function previewFile(input){
+  const file=input.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    comprovanteData=e.target.result;
+    document.getElementById('upload-area').classList.add('has-file');
+    if(file.type.startsWith('image/')){
+      const img=document.getElementById('preview-img');
+      img.src=comprovanteData;img.style.display='block';
+    }
+    document.getElementById('upload-icon').textContent='✅';
+    document.getElementById('upload-text').textContent=file.name;
+  };
+  reader.readAsDataURL(file);
+}
+
+function enviarPedido(){
+  if(!comprovanteData){toast('Anexe o comprovante de pagamento');return;}
+  const qtd=parseInt(document.getElementById('inp-qtd').value)||1;
+  const total=qtd*PRECO;
+  const valorPago=selectedPagto==='2x'?total/2:total;
+  const cod='IC-2025-'+String(pedidos.length+1).padStart(4,'0');
+  pedidos.push({
+    codigo:cod,nome:document.getElementById('inp-nome').value.trim(),
+    numero:document.getElementById('inp-numero').value,
+    tamanho:document.getElementById('inp-tamanho').value,
+    modelo:selectedModelo,cor:selectedCor,qtd,total,pagamento:selectedPagto,
+    valorPago,saldo:total-valorPago,status:'analise',
+    comprovante:comprovanteData,
+    data:new Date().toLocaleDateString('pt-BR'),
+    historico:[{data:new Date().toLocaleDateString('pt-BR'),acao:'Pedido enviado — aguardando aprovação'}]
+  });
+  salvar();
+  document.getElementById('cod-pedido').textContent=cod;
+  document.getElementById('tela-pix').style.display='none';
+  document.getElementById('tela-sucesso').style.display='block';
+}
+
+function voltarForm(){document.getElementById('tela-pix').style.display='none';document.getElementById('form-pedido').style.display='block';}
+
+function novoPedido(){
+  document.getElementById('tela-sucesso').style.display='none';
+  document.getElementById('form-pedido').style.display='block';
+  ['inp-nome','inp-numero','inp-qtd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=id==='inp-qtd'?1:'';});
+  document.getElementById('inp-tamanho').value='';
+  selectedModelo='';selectedCor='';selectedPagto='';comprovanteData='';
+  document.querySelectorAll('.modelo-card,.cor-btn,.pagto-card').forEach(el=>el.classList.remove('selected'));
+  document.getElementById('preview-img').style.display='none';
+  document.getElementById('upload-area').classList.remove('has-file');
+  document.getElementById('upload-icon').textContent='📎';
+  document.getElementById('upload-text').innerHTML='Toque para selecionar o comprovante<br/><span style="font-size:11px;opacity:0.6">JPG, PNG ou PDF</span>';
+  document.getElementById('qrcode').innerHTML='';
+  atualizarValor();
+}
+
+// MEU PEDIDO
+function buscarPedido(){
+  const cod=document.getElementById('inp-codigo').value.trim().toUpperCase();
+  const p=pedidos.find(x=>x.codigo===cod);
+  const div=document.getElementById('resultado-pedido');
+  const det=document.getElementById('pedido-detalhe');
+  if(!p){det.innerHTML='<p style="color:#f87171;text-align:center;padding:20px;">Pedido não encontrado.</p>';div.style.display='block';return;}
+  const sm={analise:'Em análise',aprovado:'Aprovado',pendente:'Pendente',quitado:'Quitado',recusado:'Recusado'};
+  det.innerHTML=`
+    <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+      <span class="status-badge status-${p.status}">${sm[p.status]||p.status}</span>
+      <span style="font-size:12px;color:var(--texto2);">${p.data}</span>
+    </div>
+    <div class="saldo-box">
+      <div class="saldo-item"><div class="saldo-valor verde">R$ ${p.valorPago.toFixed(2).replace('.',',')}</div><div class="saldo-label">Pago</div></div>
+      <div class="saldo-item"><div class="saldo-valor ${p.saldo>0?'vermelho':'verde'}">R$ ${p.saldo.toFixed(2).replace('.',',')}</div><div class="saldo-label">Saldo restante</div></div>
+    </div>
+    <div class="pedido-info" style="margin-bottom:14px;">
+      <span><div style="font-size:11px;color:var(--texto2);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Nome</div><strong>${p.nome}</strong></span>
+      <span><div style="font-size:11px;color:var(--texto2);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Número</div><strong>#${p.numero}</strong></span>
+      <span><div style="font-size:11px;color:var(--texto2);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Modelo</div><strong>${p.modelo}</strong></span>
+      <span><div style="font-size:11px;color:var(--texto2);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Cor</div><strong>${p.cor}</strong></span>
+      <span><div style="font-size:11px;color:var(--texto2);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Tamanho</div><strong>${p.tamanho}</strong></span>
+      <span><div style="font-size:11px;color:var(--texto2);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Pagamento</div><strong>${p.pagamento}</strong></span>
+    </div>
+    ${p.saldo>0&&p.status==='aprovado'?`<div style="background:rgba(217,119,6,0.1);border:1px solid var(--dourado);border-radius:10px;padding:14px;margin-bottom:14px;"><p style="font-size:13px;color:var(--dourado-light);">⚠️ Você ainda tem <strong>R$ ${p.saldo.toFixed(2).replace('.',',')}</strong> a pagar (2ª parcela)</p><p style="font-size:12px;color:var(--texto2);margin-top:6px;">Chave PIX: (81) 98471-6376</p></div>`:''}
+    <div style="border-top:1px solid var(--cinza3);padding-top:12px;">
+      <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--texto2);margin-bottom:8px;">Histórico</p>
+      ${(p.historico||[]).map(h=>`<p style="font-size:13px;margin-bottom:6px;color:var(--texto2);">📌 <span style="color:var(--texto);">${h.acao}</span> — ${h.data}</p>`).join('')}
+    </div>
+  `;
+  div.style.display='block';
+}
+
+// ADMIN
+function loginAdmin(){
+  if(document.getElementById('inp-senha').value===SENHA_ADMIN){
+    adminLogado=true;
+    document.getElementById('erro-senha').style.display='none';
+    document.getElementById('inp-senha').value='';
+    showPage('admin-gate');
+  } else {
+    document.getElementById('erro-senha').style.display='block';
+  }
+}
+
+function logoutAdmin(){adminLogado=false;document.getElementById('inp-senha').value='';showPage('admin-gate');}
+
+function adminTab(tab,btn){
+  ['pedidos','dashboard','exportar'].forEach(t=>{
+    document.getElementById('atab-content-'+t).style.display=t===tab?'block':'none';
+    document.getElementById('atab-'+t).className=t===tab?'btn btn-primary btn-sm':'btn btn-secondary btn-sm';
+  });
+  if(tab==='dashboard') renderDashboard();
+}
+
+function filtrarStatus(status){
+  filtroAtual=status;
+  document.querySelectorAll('[id^="f-"]').forEach(b=>b.style.borderColor='');
+  document.getElementById('f-'+status).style.borderColor='var(--dourado)';
+  renderListaPedidos();
+}
+
+function renderListaPedidos(){
+  const lista=document.getElementById('lista-pedidos');
+  const filtrados=filtroAtual==='todos'?pedidos:pedidos.filter(p=>p.status===filtroAtual);
+  if(!filtrados.length){lista.innerHTML='<p style="text-align:center;padding:30px;color:var(--texto2);">Nenhum pedido.</p>';return;}
+  const sm={analise:'Em análise',aprovado:'Aprovado',pendente:'Pendente',quitado:'Quitado',recusado:'Recusado'};
+  lista.innerHTML=filtrados.map(p=>`
+    <div class="pedido-item">
+      <div class="pedido-header">
+        <div>
+          <div class="pedido-nome">${p.nome} <span style="color:var(--texto2);font-weight:400;">#${p.numero}</span></div>
+          <div style="font-size:12px;color:var(--texto2);margin-top:2px;">${p.codigo} · ${p.data}</div>
+        </div>
+        <span class="status-badge status-${p.status}">${sm[p.status]||p.status}</span>
+      </div>
+      <div class="pedido-info">
+        <span><div style="font-size:11px;color:var(--texto2);margin-bottom:2px;">Modelo/Cor</div><strong>${p.modelo} · ${p.cor}</strong></span>
+        <span><div style="font-size:11px;color:var(--texto2);margin-bottom:2px;">Tam · Qtd</div><strong>${p.tamanho} · ${p.qtd}</strong></span>
+        <span><div style="font-size:11px;color:var(--texto2);margin-bottom:2px;">Total</div><strong style="color:var(--dourado-light);">R$ ${p.total.toFixed(2).replace('.',',')}</strong></span>
+        <span><div style="font-size:11px;color:var(--texto2);margin-bottom:2px;">Saldo</div><strong style="color:${p.saldo>0?'#f87171':'#4ade80'};">R$ ${p.saldo.toFixed(2).replace('.',',')}</strong></span>
+      </div>
+      ${p.comprovante&&p.comprovante.startsWith('data:image')?`<img src="${p.comprovante}" class="comprovante-thumb" style="margin-top:10px;" onclick="verComprovante('${p.codigo}')"/><span style="font-size:11px;color:var(--texto2);margin-left:8px;vertical-align:middle;">ver comprovante</span>`:p.comprovante?`<div style="margin-top:10px;font-size:12px;color:var(--texto2);">📄 Comprovante PDF anexado</div>`:''}
+      <div class="pedido-actions">
+        ${p.status==='analise'?`<button class="btn btn-success btn-sm" onclick="aprovarPedido('${p.codigo}')">✓ Aprovar</button><button class="btn btn-danger btn-sm" onclick="recusarPedido('${p.codigo}')">✗ Recusar</button>`:''}
+        ${p.status==='aprovado'&&p.saldo>0?`<button class="btn btn-primary btn-sm" onclick="registrarPagamento('${p.codigo}')">+ Registrar pagamento</button>`:''}
+        ${p.status==='aprovado'&&p.saldo<=0?`<button class="btn btn-success btn-sm" onclick="marcarQuitado('${p.codigo}')">✓ Marcar quitado</button>`:''}
+        <button class="btn btn-secondary btn-sm" onclick="editarValor('${p.codigo}')">$ Editar valor</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function aprovarPedido(cod){const p=pedidos.find(x=>x.codigo===cod);if(!p)return;p.status='aprovado';p.historico.push({data:new Date().toLocaleDateString('pt-BR'),acao:'Pagamento aprovado pelo admin'});salvar();renderListaPedidos();toast('✓ Pedido aprovado!');}
+function recusarPedido(cod){const p=pedidos.find(x=>x.codigo===cod);if(!p)return;p.status='recusado';p.historico.push({data:new Date().toLocaleDateString('pt-BR'),acao:'Comprovante recusado — envie outro'});salvar();renderListaPedidos();toast('Pedido recusado.');}
+function marcarQuitado(cod){const p=pedidos.find(x=>x.codigo===cod);if(!p)return;p.status='quitado';p.saldo=0;p.valorPago=p.total;p.historico.push({data:new Date().toLocaleDateString('pt-BR'),acao:'Marcado como quitado — pagamento completo'});salvar();renderListaPedidos();renderDashboard();toast('✓ Quitado!');}
+
+function registrarPagamento(cod){
+  const p=pedidos.find(x=>x.codigo===cod);if(!p)return;
+  const val=prompt(`Registrar pagamento — ${p.nome}\nSaldo em aberto: R$ ${p.saldo.toFixed(2)}\n\nValor recebido (R$):`);
+  if(!val)return;
+  const v=parseFloat(val.replace(',','.'));
+  if(isNaN(v)||v<=0){toast('Valor inválido');return;}
+  p.valorPago+=v;p.saldo=Math.max(0,p.saldo-v);
+  if(p.saldo<=0)p.status='quitado';
+  p.historico.push({data:new Date().toLocaleDateString('pt-BR'),acao:`Pagamento registrado: R$ ${v.toFixed(2)}`});
+  salvar();renderListaPedidos();renderDashboard();toast('✓ Pagamento registrado!');
+}
+
+function editarValor(cod){
+  const p=pedidos.find(x=>x.codigo===cod);if(!p)return;
+  const val=prompt(`Editar valor total — ${p.nome}\nAtual: R$ ${p.total.toFixed(2)}\n\nNovo valor total (R$):`);
+  if(!val)return;
+  const v=parseFloat(val.replace(',','.'));
+  if(isNaN(v)||v<=0){toast('Valor inválido');return;}
+  const diff=v-p.total;p.total=v;p.saldo=Math.max(0,p.saldo+diff);
+  p.historico.push({data:new Date().toLocaleDateString('pt-BR'),acao:`Valor ajustado para R$ ${v.toFixed(2)}`});
+  salvar();renderListaPedidos();renderDashboard();toast('✓ Valor atualizado!');
+}
+
+function verComprovante(cod){const p=pedidos.find(x=>x.codigo===cod);if(!p||!p.comprovante)return;const w=window.open();w.document.write(`<body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="${p.comprovante}" style="max-width:100%;max-height:100vh;"/></body>`);}
+
+// DASHBOARD
+function renderDashboard(){
+  const total=pedidos.length;
+  const arrecadado=pedidos.reduce((s,p)=>s+p.valorPago,0);
+  const aReceber=pedidos.reduce((s,p)=>s+p.saldo,0);
+  const quitados=pedidos.filter(p=>p.status==='quitado').length;
+  document.getElementById('stats-grid').innerHTML=`
+    <div class="stat-card"><div class="stat-num amarelo">${total}</div><div class="stat-label">Total pedidos</div></div>
+    <div class="stat-card"><div class="stat-num verde">R$${arrecadado.toFixed(0)}</div><div class="stat-label">Arrecadado</div></div>
+    <div class="stat-card"><div class="stat-num vermelho">R$${aReceber.toFixed(0)}</div><div class="stat-label">A receber</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--dourado-light);">${quitados}</div><div class="stat-label">Quitados</div></div>
+  `;
+  const porModelo={Casa:0,Fora:0,Goleiro:0};
+  pedidos.forEach(p=>{if(porModelo[p.modelo]!==undefined)porModelo[p.modelo]++;});
+  document.getElementById('stats-modelos').innerHTML=Object.entries(porModelo).map(([m,n])=>`
+    <div style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>${m}</span><span style="color:var(--dourado-light);">${n} pedido${n!==1?'s':''}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${total?Math.round(n/total*100):0}%"></div></div>
+    </div>
+  `).join('');
+  const porTam={P:0,M:0,G:0,GG:0};
+  pedidos.forEach(p=>{if(porTam[p.tamanho]!==undefined)porTam[p.tamanho]++;});
+  document.getElementById('stats-tamanhos').innerHTML=Object.entries(porTam).map(([t,n])=>`
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--cinza3);font-size:14px;"><span style="font-family:var(--fonte-cond);letter-spacing:1px;">${t}</span><strong style="color:var(--dourado-light);">${n}</strong></div>
+  `).join('');
+  const coresMap={};
+  pedidos.forEach(p=>{coresMap[p.cor]=(coresMap[p.cor]||0)+1;});
+  const corDots={Roxa:'#6B21A8',Rosa:'#EC4899',Preta:'#444',Azul:'#1D4ED8',Dourada:'#D97706',Branca:'#ddd'};
+  document.getElementById('stats-cores').innerHTML=Object.entries(coresMap).map(([c,n])=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--cinza3);font-size:14px;">
+      <div style="width:14px;height:14px;border-radius:50%;background:${corDots[c]||'#888'};flex-shrink:0;"></div>
+      <span style="flex:1;">${c}</span><strong style="color:var(--dourado-light);">${n}</strong>
+    </div>
+  `).join('');
+}
+
+// EXPORTAR
+function exportarCSV(){
+  const bom='\uFEFF';
+  const header='Código,Nome,Número,Tamanho,Modelo,Cor,Qtd,Total (R$),Pago (R$),Saldo (R$),Pagamento,Status,Data';
+  const rows=pedidos.map(p=>`${p.codigo},"${p.nome}",${p.numero},${p.tamanho},${p.modelo},${p.cor},${p.qtd},${p.total.toFixed(2)},${p.valorPago.toFixed(2)},${p.saldo.toFixed(2)},${p.pagamento},${p.status},${p.data}`);
+  downloadArquivo(bom+[header,...rows].join('\n'),'interclasse_pedidos.csv','text/csv;charset=utf-8;');
+  toast('✓ Planilha exportada!');
+}
+
+function exportarPendentes(){
+  const pend=pedidos.filter(p=>p.saldo>0);
+  const bom='\uFEFF';
+  const header='Código,Nome,Modelo,Tamanho,Saldo Restante (R$),Pagamento,Status';
+  const rows=pend.map(p=>`${p.codigo},"${p.nome}",${p.modelo},${p.tamanho},${p.saldo.toFixed(2)},${p.pagamento},${p.status}`);
+  downloadArquivo(bom+[header,...rows].join('\n'),'interclasse_pendentes.csv','text/csv;charset=utf-8;');
+  toast(`✓ ${pend.length} pendente(s) exportado(s)!`);
+}
+
+function exportarRelatorio(){
+  const total=pedidos.length;
+  const arrecadado=pedidos.reduce((s,p)=>s+p.valorPago,0);
+  const aReceber=pedidos.reduce((s,p)=>s+p.saldo,0);
+  const totalGeral=pedidos.reduce((s,p)=>s+p.total,0);
+  const rel=[
+    '================================================',
+    '  RELATÓRIO FINANCEIRO — CAMISAS INTERCLASSE',
+    '  3º Ano Ensino Médio — 2025',
+    '================================================',
+    `  Data: ${new Date().toLocaleDateString('pt-BR')}`,
+    '',
+    `  Total de pedidos:    ${total}`,
+    `  Valor total previsto: R$ ${totalGeral.toFixed(2)}`,
+    `  Total arrecadado:    R$ ${arrecadado.toFixed(2)}`,
+    `  Total a receber:     R$ ${aReceber.toFixed(2)}`,
+    '',
+    '  STATUS:',
+    ...['analise','aprovado','quitado','recusado'].map(s=>`    ${s.padEnd(10)}: ${pedidos.filter(p=>p.status===s).length}`),
+    '',
+    '  POR MODELO:',
+    ...['Casa','Fora','Goleiro'].map(m=>`    ${m.padEnd(10)}: ${pedidos.filter(p=>p.modelo===m).length}`),
+    '================================================'
+  ].join('\n');
+  downloadArquivo(rel,'interclasse_relatorio.txt','text/plain;charset=utf-8;');
+  toast('✓ Relatório exportado!');
+}
+
+function downloadArquivo(content,filename,type){
+  const blob=new Blob([content],{type});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;a.click();
+  URL.revokeObjectURL(url);
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>
