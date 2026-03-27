@@ -3,13 +3,22 @@ import ClientPage from './pages/ClientPage';
 import AdminPage from './pages/AdminPage';
 import AdminGate from './pages/AdminGate';
 
+const RequireAuth = ({ children }) => {
+  const isAuth = localStorage.getItem('admin_asaph_auth') === 'true';
+  return isAuth ? children : <Navigate to="/admin" replace />;
+};
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<ClientPage />} />
         <Route path="/admin" element={<AdminGate />} />
-        <Route path="/admin/dashboard" element={<AdminPage />} />
+        <Route path="/admin/dashboard" element={
+          <RequireAuth>
+            <AdminPage />
+          </RequireAuth>
+        } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
