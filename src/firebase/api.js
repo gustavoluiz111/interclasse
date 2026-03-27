@@ -6,60 +6,41 @@ import { db } from "./config";
 const ordersRef = () => ref(db, 'orders');
 
 // ─── Config EmailJS (Chaves Provisórias) ───────────────────────────────────────
-const EMAILJS_SERVICE = 'YOUR_SERVICE_ID';
-const EMAILJS_TEMPLATE = 'YOUR_TEMPLATE_ID';
-const EMAILJS_PUBKEY = 'YOUR_PUBLIC_KEY';
+const EMAILJS_SERVICE  = 'service_zytxyok'; // Inserido pelo usuário
+const EMAILJS_TEMPLATE = 'YOUR_TEMPLATE_ID'; // <--- Falta este
+const EMAILJS_PUBKEY   = 'YOUR_PUBLIC_KEY'; // <--- Falta este
 
 const sendEmailNotification = (type, order) => {
   if (!order.compradorEmail || !order.compradorEmail.includes('@') || EMAILJS_PUBKEY === 'YOUR_PUBLIC_KEY') return;
   
   let subject = '';
   let statusText = '';
-  let emojis = '';
 
   if (type === 'create') {
     subject = `OBA! Pedido Recebido! #${order.codigo}`;
-    statusText = `Recebemos o seu pedido #${order.codigo} com sucesso! Estamos apenas aguardando a aprovação do seu pagamento na plataforma. Se você já pagou e enviou o comprovante, logo enviaremos a confirmação.`;
-    emojis = '⏳💳';
+    statusText = `Recebemos o seu pedido com sucesso! Estamos aguardando a aprovação do pagamento.`;
   } else if (type === 'approved' || type === 'quitado') {
     subject = `AÊÊ! Pagamento Aprovado! #${order.codigo}`;
-    statusText = `Seu pagamento foi confirmado com SUCESSO! O pedido #${order.codigo} já está liberado e vai rodar bonito para a gráfica em breve!`;
-    emojis = '🎉🔥';
+    statusText = `Seu pagamento foi confirmado com sucesso! O pedido já está liberado para a gráfica.`;
   } else {
     return;
   }
 
-  const message = `${emojis} ${statusText}
-
---------------------------------------------------
-🛍️ DETALHES DO SEU PEDIDO
---------------------------------------------------
-Código: ${order.codigo}
-Titular (Atrás da Camisa): ${order.nome}
-Número Escolhido: ${order.numero}
-Cor / Modelo: ${order.modelo}
-Tamanhos: ${order.tamanho}
-Qtd Final: ${order.qtd} un.
-
-💰 Total Pedido: R$ ${order.total.toFixed(2).replace('.', ',')}
-💸 Valor Pago: R$ ${order.valorPago.toFixed(2).replace('.', ',')}
-💳 Faltando: R$ ${(order.total - order.valorPago).toFixed(2).replace('.', ',')}
---------------------------------------------------
-
-Muito obrigado por vestir nossa camisa escolar! Qualquer dúvida, chame a coordenação das turmas.
-
---------------------------------------------------
-💜 Feito com tecnologia de ponta para a Interclasse.
-💻 DEV: Luiz Gustavo
-📸 Siga a gente no Instagram: @napo.litanoofc | @lg_wstudio
---------------------------------------------------
-  `;
-
+  // Enviar os dados isolados para o Template HTML do EmailJS mapear
   emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
     to_email: order.compradorEmail,
     to_name: order.compradorNome,
     subject: subject,
-    message: message
+    status_text: statusText,
+    codigo: order.codigo,
+    jogador: order.nome,
+    numero: order.numero,
+    modelos: order.modelo,
+    tamanhos: order.tamanho,
+    qtd: order.qtd.toString(),
+    total: order.total.toFixed(2).replace('.', ','),
+    pago: order.valorPago.toFixed(2).replace('.', ','),
+    saldo: (order.total - order.valorPago).toFixed(2).replace('.', ',')
   }, EMAILJS_PUBKEY)
   .then(() => console.log('Email enviado para:', order.compradorEmail))
   .catch((e) => console.log('Falha no email silenciosa:', e));
