@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ClientPage from './pages/ClientPage';
 import AdminPage from './pages/AdminPage';
 import AdminGate from './pages/AdminGate';
@@ -10,7 +10,7 @@ const RequireAuth = ({ children }) => {
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<ClientPage />} />
         <Route path="/admin" element={<AdminGate />} />
@@ -21,7 +21,7 @@ function App() {
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
