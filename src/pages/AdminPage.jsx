@@ -69,9 +69,9 @@ export default function AdminPage() {
   };
 
   const exportCSV = () => {
-    const header = 'Código,Nome,Número,Tamanho,Modelo,Cor,Qtd,Total(R$),Pago(R$),Saldo(R$),Status,Data\n';
+    const header = 'Código,Comprador,WhatsApp,Email,Jogador,Número,Tamanho,Modelo,Cor,Qtd,Total(R$),Pago(R$),Saldo(R$),Status,Data\n';
     const rows = orders.map(p => 
-      `${p.codigo},"${p.nome}",${p.numero},${p.tamanho},${p.modelo},${p.cor},${p.qtd},${p.total},${p.valorPago},${p.saldo},${p.status},${p.data}`
+      `${p.codigo},"${p.compradorNome || ''}","${p.compradorTelefone || ''}","${p.compradorEmail || ''}","${p.nome}",${p.numero},${p.tamanho},${p.modelo},${p.cor},${p.qtd},${p.total},${p.valorPago},${p.saldo},${p.status},${p.data}`
     ).join('\n');
     
     const blob = new Blob(['\uFEFF' + header + rows], { type: 'text/csv;charset=utf-8;' });
@@ -149,6 +149,12 @@ export default function AdminPage() {
                 <div>
                   <div style={{ fontFamily: 'var(--fonte-cond)', fontSize: 18, letterSpacing: 0.5 }}>{o.nome} <span style={{ color: 'var(--texto2)', fontWeight: 'normal' }}>#{o.numero}</span></div>
                   <div style={{ fontSize: 13, color: 'var(--texto2)' }}>{o.codigo} · {o.data}</div>
+                  {o.compradorNome && (
+                    <div style={{ fontSize: 12, color: 'var(--dourado-light)', marginTop: 8, background: 'rgba(212,175,55,0.05)', padding: '6px 10px', borderRadius: 6, border: '1px solid rgba(212,175,55,0.2)' }}>
+                      <strong>👤 Comprador:</strong> {o.compradorNome} <br/> 
+                      <strong>📞 Whats:</strong> {o.compradorTelefone} <span style={{margin: '0 4px', opacity: 0.5}}>|</span> <strong>✉️ Email:</strong> {o.compradorEmail}
+                    </div>
+                  )}
                 </div>
                 <span className={`status-badge status-${o.status}`}>{o.status}</span>
               </div>

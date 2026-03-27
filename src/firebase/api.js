@@ -1,8 +1,69 @@
 import { ref, push, get, update, remove, set } from "firebase/database";
+import emailjs from "@emailjs/browser";
 import { db } from "./config";
 
 // ─── Helper ────────────────────────────────────────────────────────────────────
 const ordersRef = () => ref(db, 'orders');
+
+// ─── Config EmailJS (Chaves Provisórias) ───────────────────────────────────────
+const EMAILJS_SERVICE = 'YOUR_SERVICE_ID';
+const EMAILJS_TEMPLATE = 'YOUR_TEMPLATE_ID';
+const EMAILJS_PUBKEY = 'YOUR_PUBLIC_KEY';
+
+const sendEmailNotification = (type, order) => {
+  if (!order.compradorEmail || !order.compradorEmail.includes('@') || EMAILJS_PUBKEY === 'YOUR_PUBLIC_KEY') return;
+  
+  let subject = '';
+  let statusText = '';
+  let emojis = '';
+
+  if (type === 'create') {
+    subject = `OBA! Pedido Recebido! #${order.codigo}`;
+    statusText = `Recebemos o seu pedido #${order.codigo} com sucesso! Estamos apenas aguardando a aprovação do seu pagamento na plataforma. Se você já pagou e enviou o comprovante, logo enviaremos a confirmação.`;
+    emojis = '⏳💳';
+  } else if (type === 'approved' || type === 'quitado') {
+    subject = `AÊÊ! Pagamento Aprovado! #${order.codigo}`;
+    statusText = `Seu pagamento foi confirmado com SUCESSO! O pedido #${order.codigo} já está liberado e vai rodar bonito para a gráfica em breve!`;
+    emojis = '🎉🔥';
+  } else {
+    return;
+  }
+
+  const message = `${emojis} ${statusText}
+
+--------------------------------------------------
+🛍️ DETALHES DO SEU PEDIDO
+--------------------------------------------------
+Código: ${order.codigo}
+Titular (Atrás da Camisa): ${order.nome}
+Número Escolhido: ${order.numero}
+Cor / Modelo: ${order.modelo}
+Tamanhos: ${order.tamanho}
+Qtd Final: ${order.qtd} un.
+
+💰 Total Pedido: R$ ${order.total.toFixed(2).replace('.', ',')}
+💸 Valor Pago: R$ ${order.valorPago.toFixed(2).replace('.', ',')}
+💳 Faltando: R$ ${(order.total - order.valorPago).toFixed(2).replace('.', ',')}
+--------------------------------------------------
+
+Muito obrigado por vestir nossa camisa escolar! Qualquer dúvida, chame a coordenação das turmas.
+
+--------------------------------------------------
+💜 Feito com tecnologia de ponta para a Interclasse.
+💻 DEV: Luiz Gustavo
+📸 Siga a gente no Instagram: @napo.litanoofc | @lg_wstudio
+--------------------------------------------------
+  `;
+
+  emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
+    to_email: order.compradorEmail,
+    to_name: order.compradorNome,
+    subject: subject,
+    message: message
+  }, EMAILJS_PUBKEY)
+  .then(() => console.log('Email enviado para:', order.compradorEmail))
+  .catch((e) => console.log('Falha no email silenciosa:', e));
+};
 
 // ─── Create Order ──────────────────────────────────────────────────────────────
 export const createOrder = async (orderData) => {
@@ -27,6 +88,7 @@ export const createOrder = async (orderData) => {
   };
 
   await update(newRef, finalData);
+  sendEmailNotification('create', finalData);
   return { ...finalData, id: newRef.key };
 };
 
@@ -62,6 +124,9 @@ export const updateOrderStatus = async (id, status, acao) => {
   }];
 
   await update(oRef, { status, historico });
+  if (status === 'aprovado' || status === 'quitado') {
+    sendEmailNotification('approved', { ...order, status });
+  }
 };
 
 // ─── Register Payment ──────────────────────────────────────────────────────────
@@ -81,7 +146,16 @@ export const updateOrderPayment = async (id, valorPagoAdicional) => {
     ...(novoSaldo === 0 ? [{ data: now, acao: 'Pedido quitado — pagamento completo ✓' }] : [])
   ];
 
-  await update(oRef, { valorPago: novoValorPago, saldo: novoSaldo, status: novoStatus, historico });
+  const payload = {
+    valorPago: novoValorPago, 
+    saldo: novoSaldo, 
+    status: novoStatus, 
+    historico 
+  };
+  await update(oRef, payload);
+  if (novoStatus === 'aprovado' || novoStatus === 'quitado') {
+    sendEmailNotification('approved', { ...order, ...payload });
+  }
 };
 
 // ─── Delete Order (Admin) ──────────────────────────────────────────────────────

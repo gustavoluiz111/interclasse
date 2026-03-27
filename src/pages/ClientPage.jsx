@@ -39,7 +39,12 @@ export default function ClientPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState('');
 
-  // Customer
+  // Customer (Buyer Details)
+  const [compradorNome, setCompradorNome] = useState('');
+  const [compradorEmail, setCompradorEmail] = useState('');
+  const [compradorTelefone, setCompradorTelefone] = useState('');
+
+  // Shirt Print (Name/Number on back)
   const [nome, setNome]     = useState('');
   const [numero, setNumero] = useState('');
   const [pagamento, setPagamento] = useState('');
@@ -76,8 +81,11 @@ export default function ClientPage() {
 
   // ── Validate ──────────────────────────────────────────────────────────────
   const handleNext = () => {
-    if (!nome.trim())   return setError('Informe seu nome.');
-    if (!numero.trim()) return setError('Informe seu número.');
+    if (!compradorNome.trim() || !compradorEmail.trim() || !compradorTelefone.trim()) {
+      return setError('Preencha os dados do comprador para receber os recibos.');
+    }
+    if (!nome.trim())   return setError('Informe o nome que vai na estampa das camisas.');
+    if (!numero.trim()) return setError('Informe o número que vai na estampa.');
     for (let i = 0; i < camisas.length; i++) {
       const s = camisas[i];
       if (!s.modelo)  return setError(`Camisa ${i + 1}: escolha o modelo.`);
@@ -105,6 +113,7 @@ export default function ClientPage() {
     setError('');
     try {
       const orderData = {
+        compradorNome, compradorEmail, compradorTelefone,
         nome, numero, pagamento,
         camisas,
         total, valorPago,
@@ -220,15 +229,34 @@ export default function ClientPage() {
 
           <ErrorBanner msg={error} />
 
-          {/* Customer */}
+          {/* Contact Data */}
           <div className="card">
-            <h2 className="card-title"><div className="dot" /> Seus Dados</h2>
+            <h2 className="card-title"><div className="dot" /> 1. Dados do Comprador (Contato)</h2>
             <div className="form-group">
-              <label>Nome (como ficará na camisa)</label>
-              <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: João Lucas" />
+              <label>Nome Completo do Responsável</label>
+              <input type="text" value={compradorNome} onChange={e => setCompradorNome(e.target.value)} placeholder="Ex: Maria da Silva" />
+            </div>
+            <div className="form-group grid-2">
+              <div>
+                <label>E-mail (Recibos)</label>
+                <input type="email" value={compradorEmail} onChange={e => setCompradorEmail(e.target.value)} placeholder="exemplo@gmail.com" />
+              </div>
+              <div>
+                <label>WhatsApp</label>
+                <input type="tel" value={compradorTelefone} onChange={e => setCompradorTelefone(e.target.value)} placeholder="(11) 99999-9999" />
+              </div>
+            </div>
+          </div>
+
+          {/* Player Print Data */}
+          <div className="card">
+            <h2 className="card-title"><div className="dot" /> 2. Estampa das Camisas</h2>
+            <div className="form-group">
+              <label>Nome na Camisa (Costas)</label>
+              <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: L GUSTAVO" />
             </div>
             <div className="form-group">
-              <label>Número</label>
+              <label>Número na Camisa</label>
               <input type="number" min="1" max="99" value={numero} onChange={e => setNumero(e.target.value)} placeholder="Ex: 10" />
             </div>
           </div>
