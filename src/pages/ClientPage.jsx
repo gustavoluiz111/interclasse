@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { useNavigate } from 'react-router-dom';
 import {
   CheckCircle2, ChevronRight, Copy, Upload, ArrowLeft,
-  Search, Plus, Trash2, Ticket, AlertCircle
+  Search, Plus, Trash2, Ticket, AlertCircle, Lock
 } from 'lucide-react';
 import { createOrder, uploadComprovante, fetchOrderByCodigo } from '../firebase/api';
 import { gerarPixPayload } from '../utils/pix';
@@ -32,6 +33,7 @@ const STATUS_MAP = {
 };
 
 export default function ClientPage() {
+  const routerNavigate = useNavigate();
   const [step, setStep]     = useState('menu'); // menu | order | pix | success | search
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState('');
@@ -598,6 +600,22 @@ export default function ClientPage() {
           )}
         </div>
       )}
+      
+      {/* ─── FOOTER LINK ADMIN (Só aparece no menu principal) ──────────────── */}
+      {step === 'menu' && (
+        <div 
+          onClick={() => routerNavigate('/admin')}
+          style={{
+            textAlign: 'center', marginTop: 30, paddingBottom: 20, cursor: 'pointer',
+            opacity: 0.4, display: 'flex', alignItems: 'center', 
+            justifyContent: 'center', gap: 6, fontSize: 11, letterSpacing: 2, 
+            textTransform: 'uppercase', color: 'var(--texto)'
+          }}
+        >
+          <Lock size={12} /> Área Restrita
+        </div>
+      )}
+
     </div>
     </>
   );
