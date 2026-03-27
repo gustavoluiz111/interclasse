@@ -60,7 +60,7 @@ export const createOrder = async (orderData) => {
     codigo,
     data: dataBR,
     timestamp: now.getTime(),
-    status: orderData.valorPago >= orderData.total ? 'quitado' : 'analise',
+    status: 'analise',
     historico: [{
       data: dataBR,
       acao: 'Pedido enviado — aguardando aprovação'
@@ -98,15 +98,22 @@ export const updateOrderStatus = async (id, status, acao) => {
   const snap = await get(oRef);
   if (!snap.exists()) return null;
 
-  const order    = snap.val();
+  let finalStatus = status;
+  let textAction = acao;
+
+  if (status === 'aprovado' && order.saldo <= 0) {
+    finalStatus = 'quitado';
+    textAction = textAction + ' (Pagamento Total Confirmado)';
+  }
+
   const historico = [...(order.historico || []), {
     data: new Date().toLocaleDateString('pt-BR'),
-    acao,
+    acao: textAction,
   }];
 
-  await update(oRef, { status, historico });
-  if (status === 'aprovado' || status === 'quitado') {
-    sendEmailNotification('approved', { ...order, status });
+  await update(oRef, { status: finalStatus, historico });
+  if (finalStatus === 'aprovado' || finalStatus === 'quitado') {
+    sendEmailNotification('approved', { ...order, status: finalStatus });
   }
 };
 
