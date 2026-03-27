@@ -5,10 +5,10 @@ import { db } from "./config";
 // ─── Helper ────────────────────────────────────────────────────────────────────
 const ordersRef = () => ref(db, 'orders');
 
-// ─── Config EmailJS (Chaves Provisórias) ───────────────────────────────────────
-const EMAILJS_SERVICE  = 'service_zytxyok'; // Inserido pelo usuário
-const EMAILJS_TEMPLATE = 'YOUR_TEMPLATE_ID'; // <--- Falta este
-const EMAILJS_PUBKEY   = 'YOUR_PUBLIC_KEY'; // <--- Falta este
+// ─── Config EmailJS (Chaves de Produção) ───────────────────────────────────────
+const EMAILJS_SERVICE  = 'service_zytxyok';
+const EMAILJS_TEMPLATE = 'template_f4y9fg9';
+const EMAILJS_PUBKEY   = 'PFaygIMxnnvHoHrxq';
 
 const sendEmailNotification = (type, order) => {
   if (!order.compradorEmail || !order.compradorEmail.includes('@') || EMAILJS_PUBKEY === 'YOUR_PUBLIC_KEY') return;
