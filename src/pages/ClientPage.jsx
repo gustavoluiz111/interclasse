@@ -8,6 +8,8 @@ import {
 import { createOrder, uploadComprovante, fetchOrderByCodigo } from '../firebase/api';
 import { gerarPixPayload } from '../utils/pix';
 import Receipt from './Receipt';
+import Aurora from '../components/Aurora';
+import RotatingText from '../components/RotatingText';
 
 const SHIRT_PRICE = 25;
 // Chave aleatória PIX
@@ -24,7 +26,7 @@ const MODELS = [
   { id: 'Branca', cor: 'Branca', label: 'BRANCA', desc: 'Camisa Branca Napoli', img: `${BASE_URL}branco.jpeg`, accent: '#D4AF37' },
 ];
 
-const emptyShirt = () => ({ modelo: '', cor: '', tamanho: '', qtd: 1 });
+const emptyShirt = () => ({ modelo: '', cor: '', tamanho: '', qtd: 1, nome: '', numero: '' });
 
 const STATUS_MAP = {
   analise:  { label: '⏳ Em Análise', color: '#F59E0B' },
@@ -44,9 +46,6 @@ export default function ClientPage() {
   const [compradorEmail, setCompradorEmail] = useState('');
   const [compradorTelefone, setCompradorTelefone] = useState('');
 
-  // Shirt Print (Name/Number on back)
-  const [nome, setNome]     = useState('');
-  const [numero, setNumero] = useState('');
   const [pagamento, setPagamento] = useState('');
 
   // Shirts
@@ -70,6 +69,7 @@ export default function ClientPage() {
     setCamisas(p => p.map((s, idx) => idx === i ? { ...s, [k]: v } : s));
   const addShirt    = () => setCamisas(p => [...p, emptyShirt()]);
   const removeShirt = (i) => setCamisas(p => p.filter((_, idx) => idx !== i));
+  const duplicateShirt = (i) => setCamisas(p => [...p, { ...p[i] }]);
 
   // ── Totals ──────────────────────────────────────────────────────────────────
   const totalQtd  = camisas.reduce((a, s) => a + (parseInt(s.qtd) || 1), 0);
@@ -84,10 +84,10 @@ export default function ClientPage() {
     if (!compradorNome.trim() || !compradorEmail.trim() || !compradorTelefone.trim()) {
       return setError('Preencha os dados do comprador para receber os recibos.');
     }
-    if (!nome.trim())   return setError('Informe o nome que vai na estampa das camisas.');
-    if (!numero.trim()) return setError('Informe o número que vai na estampa.');
     for (let i = 0; i < camisas.length; i++) {
       const s = camisas[i];
+      if (!String(s.nome).trim()) return setError(`Camisa ${i + 1}: Informe o nome na estampa.`);
+      if (!String(s.numero).trim()) return setError(`Camisa ${i + 1}: Informe o número na estampa.`);
       if (!s.modelo)  return setError(`Camisa ${i + 1}: escolha o modelo.`);
       if (!s.cor)     return setError(`Camisa ${i + 1}: escolha a cor.`);
       if (!s.tamanho) return setError(`Camisa ${i + 1}: escolha o tamanho.`);
@@ -112,15 +112,22 @@ export default function ClientPage() {
     setLoading(true);
     setError('');
     try {
+      // Garante que numero sempre seja string
+      const camisasNormalizadas = camisas.map(s => ({
+        ...s,
+        nome: String(s.nome).trim(),
+        numero: String(s.numero).trim(),
+        qtd: parseInt(s.qtd) || 1,
+      }));
       const orderData = {
         compradorNome, compradorEmail, compradorTelefone,
-        nome, numero, pagamento,
-        camisas,
+        pagamento,
+        camisas: camisasNormalizadas,
         total, valorPago,
         saldo: total - valorPago,
-        modelo: camisas.map(s => s.modelo).join(' + '),
-        cor:    camisas.map(s => s.cor).join(' + '),
-        tamanho: camisas[0].tamanho,
+        modelo: camisasNormalizadas.map(s => s.modelo).join(' + '),
+        cor:    camisasNormalizadas.map(s => s.cor).join(' + '),
+        tamanho: camisasNormalizadas[0].tamanho,
         qtd: totalQtd,
       };
       const created = await createOrder(orderData);
@@ -154,7 +161,7 @@ export default function ClientPage() {
     }
   };
 
-  const pixPayload = gerarPixPayload(PIX_KEY, valorPago.toString(), nome || 'PAGADOR');
+  const pixPayload = gerarPixPayload(PIX_KEY, valorPago.toString(), compradorNome || 'PAGADOR');
 
   // ── Error Banner ───────────────────────────────────────────────────────────
   const ErrorBanner = ({ msg }) => msg ? (
@@ -171,6 +178,18 @@ export default function ClientPage() {
   // ────────────────────────────────────────────────────────────────────────────
   return (
     <>
+    {/* Aurora Background */}
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+    }}>
+      <Aurora
+        colorStops={['#3b0764', '#7C3AED', '#1e1b4b']}
+        amplitude={1.2}
+        blend={0.6}
+        speed={0.8}
+      />
+    </div>
+
     {/* Receipt modal */}
     {showReceipt && finishedOrder && (
       <Receipt order={finishedOrder} onClose={() => setShowReceipt(false)} />
@@ -179,7 +198,7 @@ export default function ClientPage() {
       <Receipt order={searchResult} onClose={() => setShowReceipt(false)} />
     )}
 
-    <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px 90px' }}>
+    <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px 90px', position: 'relative', zIndex: 1 }}>
 
       {/* ─── HEADER ─────────────────────────────────────────────────────────── */}
       <div style={{ textAlign: 'center', marginBottom: 36 }} className="animate-fade-in">
@@ -189,11 +208,26 @@ export default function ClientPage() {
           fontSize: 11, fontWeight: 800, color: '#000', marginBottom: 10,
           letterSpacing: 3, textTransform: 'uppercase',
         }}>
-          3º Ano EM · 2025
+          Napoli 2026
         </div>
         <h1 style={{ fontFamily: 'var(--fonte-display)', fontSize: 'clamp(40px, 10vw, 68px)', lineHeight: 0.9, letterSpacing: 2 }}>
           CAMISAS<br />
-          <span className="gradient-text">INTERCLASSE</span>
+          <span style={{ display: 'inline-block', overflow: 'hidden', minWidth: 260 }}>
+            <RotatingText
+              texts={['NAPOLI', 'MAIOR', 'DA', 'EAPC']}
+              rotationInterval={2200}
+              staggerDuration={0.04}
+              staggerFrom="first"
+              splitBy="characters"
+              mainClassName="gradient-text"
+              elementLevelClassName="gradient-text"
+              transition={{ type: 'spring', damping: 22, stiffness: 180 }}
+              initial={{ y: '110%', opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '-110%', opacity: 0 }}
+              style={{ display: 'inline-flex', justifyContent: 'center', width: '100%' }}
+            />
+          </span>
         </h1>
         <p style={{ color: 'var(--texto2)', textTransform: 'uppercase', fontSize: 11, letterSpacing: 3, marginTop: 10 }}>
           Faça seu pedido · Pague · Acompanhe
@@ -248,36 +282,53 @@ export default function ClientPage() {
             </div>
           </div>
 
-          {/* Player Print Data */}
-          <div className="card">
-            <h2 className="card-title"><div className="dot" /> 2. Estampa das Camisas</h2>
-            <div className="form-group">
-              <label>Nome na Camisa (Costas)</label>
-              <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: L GUSTAVO" />
-            </div>
-            <div className="form-group">
-              <label>Número na Camisa</label>
-              <input type="number" min="1" max="99" value={numero} onChange={e => setNumero(e.target.value)} placeholder="Ex: 10" />
-            </div>
-          </div>
-
           {/* Shirts */}
           {camisas.map((s, idx) => (
             <div key={idx} className="card">
               <h2 className="card-title">
                 <div className="dot" />
                 Camisa {idx + 1}
-                {camisas.length > 1 && (
-                  <button onClick={() => removeShirt(idx)} style={{
-                    marginLeft: 'auto', background: 'rgba(248,113,113,0.12)',
-                    border: '1px solid rgba(248,113,113,0.3)',
-                    color: '#f87171', borderRadius: 6, padding: '4px 8px',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center',
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                  <button onClick={() => duplicateShirt(idx)} style={{
+                    background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)',
+                    color: '#3b82f6', borderRadius: 6, padding: '4px 8px',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13,
                   }}>
-                    <Trash2 size={14} />
+                    <Copy size={14} /> Duplicar
                   </button>
-                )}
+                  {camisas.length > 1 && (
+                    <button onClick={() => removeShirt(idx)} style={{
+                      background: 'rgba(248,113,113,0.12)', border: '1px solid rgba(248,113,113,0.3)',
+                      color: '#f87171', borderRadius: 6, padding: '4px 8px',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center',
+                    }}>
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
               </h2>
+
+              <div className="grid-2" style={{ marginBottom: 14 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Nome na Camisa (Costas)</label>
+                  <input type="text" value={s.nome} onChange={e => updateShirt(idx, 'nome', e.target.value)} placeholder="Ex: L GUSTAVO" />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Número na Camisa</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={2}
+                    value={s.numero}
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+                      updateShirt(idx, 'numero', val);
+                    }}
+                    placeholder="Ex: 10"
+                  />
+                </div>
+              </div>
 
               {/* Shirt photo selector — clicking photo selects model+color */}
               <div style={{ marginBottom: 14 }}>
@@ -324,19 +375,13 @@ export default function ClientPage() {
                 </div>
               </div>
 
-              {/* Size + Qty */}
-              <div className="grid-2">
-                <div className="form-group">
-                  <label>Tamanho</label>
-                  <select value={s.tamanho} onChange={e => updateShirt(idx, 'tamanho', e.target.value)}>
-                    <option value="">Escolher</option>
-                    {SIZES.map(sz => <option key={sz}>{sz}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Quantidade</label>
-                  <input type="number" min="1" max="10" value={s.qtd} onChange={e => updateShirt(idx, 'qtd', parseInt(e.target.value) || 1)} />
-                </div>
+              {/* Size */}
+              <div className="form-group">
+                <label>Tamanho</label>
+                <select value={s.tamanho} onChange={e => updateShirt(idx, 'tamanho', e.target.value)}>
+                  <option value="">Escolher</option>
+                  {SIZES.map(sz => <option key={sz}>{sz}</option>)}
+                </select>
               </div>
             </div>
           ))}
@@ -399,14 +444,15 @@ export default function ClientPage() {
             
             <div style={{ background: 'var(--cinza)', borderRadius: 12, padding: 16, marginBottom: 16, border: '1px solid var(--cinza3)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed var(--cinza4)', paddingBottom: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 11, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: 1 }}>Jogador</span>
-                <span style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>{nome} <span style={{ color: 'var(--roxo-light)' }}>#{numero}</span></span>
+                <span style={{ fontSize: 11, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: 1 }}>Comprador</span>
+                <span style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>{compradorNome}</span>
               </div>
               
               {camisas.map((c, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13 }}>
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13, borderBottom: i < camisas.length -1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                   <div>
-                    <span style={{ color: '#fff', fontWeight: 600 }}>{c.qtd}x</span> {c.modelo} ({c.cor})
+                    <div style={{ marginBottom: 4 }}><span style={{ color: '#fff', fontWeight: 600 }}>{c.qtd}x</span> {c.modelo} ({c.cor})</div>
+                    <div style={{ color: 'var(--texto2)', fontSize: 11 }}>Nome: <span style={{color: '#fff'}}>{c.nome}</span> #{c.numero}</div>
                   </div>
                   <div style={{ color: 'var(--texto2)', fontSize: 12 }}>Tam: {c.tamanho}</div>
                 </div>
@@ -564,8 +610,8 @@ export default function ClientPage() {
               {/* Info */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 10 }}>
                 <div>
-                  <div style={{ fontFamily: 'var(--fonte-cond)', fontSize: 22, letterSpacing: 1 }}>{searchResult.nome}</div>
-                  <div style={{ fontSize: 13, color: 'var(--texto2)' }}>#{searchResult.numero} · {searchResult.codigo}</div>
+                  <div style={{ fontFamily: 'var(--fonte-cond)', fontSize: 22, letterSpacing: 1 }}>{searchResult.compradorNome || searchResult.nome}</div>
+                  <div style={{ fontSize: 13, color: 'var(--texto2)' }}>{searchResult.codigo}</div>
                   <div style={{ fontSize: 12, color: 'var(--texto2)' }}>Pedido em {searchResult.data}</div>
                 </div>
                 <div style={{
@@ -584,7 +630,8 @@ export default function ClientPage() {
                 <div style={{ fontSize: 10, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 }}>Itens</div>
                 {searchResult.camisas ? searchResult.camisas.map((s, i) => (
                   <div key={i} style={{ background: 'var(--cinza2)', borderRadius: 9, padding: '9px 14px', marginBottom: 7, fontSize: 14, borderLeft: '3px solid var(--roxo-light)' }}>
-                    <strong style={{ color: 'var(--roxo-light)' }}>C{i+1}:</strong> {s.modelo} · {s.cor} · Tam {s.tamanho} · {s.qtd}x
+                    <div style={{ marginBottom: 4 }}><strong style={{ color: 'var(--roxo-light)' }}>C{i+1}:</strong> {s.modelo} · {s.cor} · Tam {s.tamanho} · {s.qtd}x</div>
+                    <div style={{ fontSize: 12, color: 'var(--texto2)' }}>Estampa: {s.nome || searchResult.nome} #{s.numero || searchResult.numero}</div>
                   </div>
                 )) : (
                   <div style={{ background: 'var(--cinza2)', borderRadius: 9, padding: '9px 14px', fontSize: 14, borderLeft: '3px solid var(--roxo-light)' }}>

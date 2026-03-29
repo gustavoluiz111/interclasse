@@ -35,13 +35,19 @@ export default function AdminPage() {
   const aprovar = async (id) => {
     if (!window.confirm("Aprovar pedido?")) return;
     await updateOrderStatus(id, 'aprovado', 'Pagamento aprovado pelo admin');
-    loadData();
+    await loadData();
   };
 
   const recusar = async (id) => {
     if (!window.confirm("Recusar pedido? O comprovante será rejeitado.")) return;
     await updateOrderStatus(id, 'recusado', 'Comprovante recusado — envie outro');
-    loadData();
+    await loadData();
+  };
+
+  const recolocarEmAnalise = async (id) => {
+    if (!window.confirm("Recolocar pedido em análise?")) return;
+    await updateOrderStatus(id, 'analise', 'Pedido recolocado em análise pelo admin');
+    await loadData();
   };
 
   const registrarPagamento = async (order) => {
@@ -69,9 +75,9 @@ export default function AdminPage() {
   };
 
   const exportCSV = () => {
-    const header = 'Código,Comprador,WhatsApp,Email,Jogador,Número,Tamanho,Modelo,Cor,Qtd,Total(R$),Pago(R$),Saldo(R$),Status,Data\n';
+    const header = 'Código,Comprador,WhatsApp,Email,Jogador(Legacy),Número(Legacy),Status,Data\n';
     const rows = orders.map(p => 
-      `${p.codigo},"${p.compradorNome || ''}","${p.compradorTelefone || ''}","${p.compradorEmail || ''}","${p.nome}",${p.numero},${p.tamanho},${p.modelo},${p.cor},${p.qtd},${p.total},${p.valorPago},${p.saldo},${p.status},${p.data}`
+      `${p.codigo},"${p.compradorNome || ''}","${p.compradorTelefone || ''}","${p.compradorEmail || ''}","${p.nome || ''}",${p.numero || ''},${p.status},${p.data}`
     ).join('\n');
     
     const blob = new Blob(['\uFEFF' + header + rows], { type: 'text/csv;charset=utf-8;' });
@@ -86,7 +92,7 @@ export default function AdminPage() {
     const rows = orders
       .filter(o => o.status === 'aprovado' || o.status === 'quitado')
       .flatMap(o => (o.camisas || []).map(c => 
-        `${o.codigo},"${o.nome}",${o.numero},${c.modelo},${c.cor},${c.tamanho},${c.qtd}`
+        `${o.codigo},"${c.nome || o.nome || ''}",${c.numero || o.numero || ''},${c.modelo},${c.cor},${c.tamanho},${c.qtd}`
       ))
       .join('\n');
     
@@ -147,7 +153,7 @@ export default function AdminPage() {
             <div key={o.id} className="card" style={{ padding: 16, marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                 <div>
-                  <div style={{ fontFamily: 'var(--fonte-cond)', fontSize: 18, letterSpacing: 0.5 }}>{o.nome} <span style={{ color: 'var(--texto2)', fontWeight: 'normal' }}>#{o.numero}</span></div>
+                  <div style={{ fontFamily: 'var(--fonte-cond)', fontSize: 18, letterSpacing: 0.5 }}>{o.compradorNome || o.nome} {o.numero && <span style={{ color: 'var(--texto2)', fontWeight: 'normal' }}>#{o.numero}</span>}</div>
                   <div style={{ fontSize: 13, color: 'var(--texto2)' }}>{o.codigo} · {o.data}</div>
                   {o.compradorNome && (
                     <div style={{ fontSize: 12, color: 'var(--dourado-light)', marginTop: 8, background: 'rgba(212,175,55,0.05)', padding: '6px 10px', borderRadius: 6, border: '1px solid rgba(212,175,55,0.2)' }}>
@@ -160,30 +166,61 @@ export default function AdminPage() {
               </div>
               
               <div className="grid-2" style={{ gap: 8, fontSize: 13, background: 'var(--cinza2)', padding: 12, borderRadius: 8, marginBottom: 16 }}>
-                <div><span style={{ color: 'var(--texto2)', fontSize: 11, textTransform: 'uppercase', display: 'block' }}>Modelo / Cor</span> <strong>{o.modelo} · {o.cor}</strong></div>
-                <div><span style={{ color: 'var(--texto2)', fontSize: 11, textTransform: 'uppercase', display: 'block' }}>Tam / Qtd</span> <strong>{o.tamanho} · {o.qtd} un</strong></div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                   {o.camisas?.map((c, i) => (
+                      <div key={i} style={{ borderBottom: i < o.camisas.length - 1 ? '1px solid var(--cinza3)' : 'none', paddingBottom: i < o.camisas.length - 1 ? 6 : 0, marginBottom: i < o.camisas.length - 1 ? 6 : 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                           <strong>{c.qtd}x {c.modelo} ({c.cor})</strong>
+                           <span style={{ color: 'var(--texto2)' }}>Tam {c.tamanho}</span>
+                        </div>
+                        <div style={{ fontSize: 12, color: 'var(--texto2)' }}>Estampa: <span style={{ color: '#fff' }}>{c.nome || o.nome}</span> #{c.numero || o.numero}</div>
+                      </div>
+                   ))}
+                </div>
                 <div><span style={{ color: 'var(--texto2)', fontSize: 11, textTransform: 'uppercase', display: 'block' }}>Total / Pago</span> <strong style={{ color: 'var(--dourado-light)' }}>R$ {o.total.toFixed(2)} / R$ {o.valorPago.toFixed(2)}</strong></div>
                 <div><span style={{ color: 'var(--texto2)', fontSize: 11, textTransform: 'uppercase', display: 'block' }}>Saldo Aberto</span> <strong style={{ color: o.saldo > 0 ? '#f87171' : '#4ade80' }}>R$ {o.saldo.toFixed(2)}</strong></div>
               </div>
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {o.status === 'analise' && (
+                {(o.status === 'analise') && (
                   <>
                     <button className="btn btn-success btn-sm" onClick={() => aprovar(o.id)}>✓ Aprovar</button>
                     <button className="btn btn-danger btn-sm" onClick={() => recusar(o.id)}>✗ Recusar</button>
+                  </>
+                )}
+                {o.status === 'recusado' && (
+                  <>
+                    <button className="btn btn-success btn-sm" onClick={() => aprovar(o.id)} style={{ background: 'rgba(74,222,128,0.15)', border: '1px solid #4ade80', color: '#4ade80' }}>✓ Aprovar mesmo assim</button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => recolocarEmAnalise(o.id)} style={{ borderColor: '#F59E0B', color: '#F59E0B' }}>⏳ Recolocar em Análise</button>
                   </>
                 )}
                 {o.status === 'aprovado' && o.saldo > 0 && (
                   <button className="btn btn-primary btn-sm" onClick={() => registrarPagamento(o)}>+ Registrar Pagamento</button>
                 )}
                 
-                {o.comprovanteUrl && o.comprovanteUrl.startsWith('data:image') && (
-                  <button className="btn btn-secondary btn-sm" style={{borderColor: 'var(--roxo-light)', color: 'var(--roxo-light)'}} onClick={() => setViewingComprovante(o.comprovanteUrl)}>
-                    📄 Ver Comprovante
+                {o.comprovanteUrl && o.comprovanteUrl.startsWith('data:') && (
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    style={{ borderColor: 'var(--roxo-light)', color: 'var(--roxo-light)' }}
+                    onClick={() => {
+                      if (o.comprovanteUrl.startsWith('data:application/pdf') || o.comprovanteUrl.startsWith('data:application/octet')) {
+                        // PDF: abre em nova aba
+                        const blob = new Blob(
+                          [Uint8Array.from(atob(o.comprovanteUrl.split(',')[1]), c => c.charCodeAt(0))],
+                          { type: 'application/pdf' }
+                        );
+                        window.open(URL.createObjectURL(blob), '_blank');
+                      } else {
+                        // Imagem: abre modal
+                        setViewingComprovante(o.comprovanteUrl);
+                      }
+                    }}
+                  >
+                    {o.comprovanteUrl.startsWith('data:application') ? '📑 Ver PDF' : '🖼️ Ver Imagem'}
                   </button>
                 )}
-                {o.comprovanteUrl && !o.comprovanteUrl.startsWith('data:image') && o.comprovanteAnexado !== false && (
-                   <span style={{fontSize: 12, color: 'var(--dourado-light)', padding: '6px 0'}}>Possui comprovante (PDF/Local)</span>
+                {o.comprovanteUrl && !o.comprovanteUrl.startsWith('data:') && o.comprovanteAnexado !== false && (
+                  <span style={{ fontSize: 12, color: 'var(--dourado-light)', padding: '6px 0' }}>Comprovante registrado (sem prévia)</span>
                 )}
                 
                 <button 
@@ -268,8 +305,8 @@ export default function AdminPage() {
                     {(o.camisas || []).map((c, idx) => (
                       <tr key={`${o.id}-${idx}`} style={{ borderBottom: '1px solid var(--cinza3)' }}>
                         <td style={{ padding: '10px 12px', color: 'var(--texto2)' }}>{o.codigo}</td>
-                        <td style={{ padding: '10px 12px', fontWeight: 'bold' }}>{o.nome}</td>
-                        <td style={{ padding: '10px 12px', fontWeight: 'bold', color: 'var(--roxo-light)' }}>{o.numero}</td>
+                        <td style={{ padding: '10px 12px', fontWeight: 'bold' }}>{c.nome || o.nome}</td>
+                        <td style={{ padding: '10px 12px', fontWeight: 'bold', color: 'var(--roxo-light)' }}>{c.numero || o.numero}</td>
                         <td style={{ padding: '10px 12px' }}>{c.modelo}</td>
                         <td style={{ padding: '10px 12px' }}>{c.cor}</td>
                         <td style={{ padding: '10px 12px', fontWeight: 'bold' }}>{c.tamanho}</td>
@@ -283,18 +320,35 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Modal de Comprovante */}
+      {/* Modal de Comprovante (Imagem) */}
       {viewingComprovante && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 99999,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
-        }} onClick={() => setViewingComprovante(null)}>
-          <div style={{ position: 'relative', maxWidth: '100%', maxHeight: '100%' }}>
-            <button style={{
-              position: 'absolute', top: -40, right: 0, background: 'none', border: 'none',
-              color: '#fff', fontSize: 16, cursor: 'pointer', fontFamily: 'var(--fonte-cond)'
-            }}>FECHAR ✕</button>
-            <img src={viewingComprovante} alt="Comprovante" style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: 12, border: '2px solid var(--roxo-light)' }} />
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 99999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+            flexDirection: 'column', gap: 16,
+          }}
+          onClick={() => setViewingComprovante(null)}
+        >
+          <button
+            style={{
+              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)',
+              color: '#fff', padding: '8px 20px', borderRadius: 8,
+              cursor: 'pointer', fontFamily: 'var(--fonte-cond)', letterSpacing: 2,
+            }}
+            onClick={() => setViewingComprovante(null)}
+          >
+            FECHAR ✕
+          </button>
+          <div
+            style={{ position: 'relative', maxWidth: '100%', maxHeight: '85vh' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <img
+              src={viewingComprovante}
+              alt="Comprovante"
+              style={{ maxWidth: '100%', maxHeight: '85vh', borderRadius: 12, border: '2px solid var(--roxo-light)', display: 'block' }}
+            />
           </div>
         </div>
       )}

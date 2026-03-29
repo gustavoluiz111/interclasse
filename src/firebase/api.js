@@ -26,6 +26,13 @@ const sendEmailNotification = (type, order) => {
     return;
   }
 
+  // Monta resumo das camisas (nome + número de cada uma)
+  const camisasResumo = (order.camisas && order.camisas.length > 0)
+    ? order.camisas.map((c, i) =>
+        `Camisa ${i + 1}: ${c.nome || order.nome || '-'} #${c.numero || order.numero || '-'} | ${c.modelo} ${c.cor} Tam ${c.tamanho} (${c.qtd}x)`
+      ).join('\n')
+    : `${order.nome || '-'} #${order.numero || '-'} | ${order.modelo || '-'} Tam ${order.tamanho || '-'}`;
+
   // Enviar os dados isolados para o Template HTML do EmailJS mapear
   emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
     to_email: order.compradorEmail,
@@ -33,14 +40,15 @@ const sendEmailNotification = (type, order) => {
     subject: subject,
     status_text: statusText,
     codigo: order.codigo,
-    jogador: order.nome,
-    numero: order.numero,
+    jogador: (order.camisas && order.camisas[0]?.nome) || order.nome || '-',
+    numero: (order.camisas && order.camisas[0]?.numero) || order.numero || '-',
     modelos: order.modelo,
     tamanhos: order.tamanho,
-    qtd: order.qtd.toString(),
-    total: order.total.toFixed(2).replace('.', ','),
-    pago: order.valorPago.toFixed(2).replace('.', ','),
-    saldo: (order.total - order.valorPago).toFixed(2).replace('.', ',')
+    qtd: (order.qtd || 0).toString(),
+    camisas_resumo: camisasResumo,
+    total: (order.total || 0).toFixed(2).replace('.', ','),
+    pago: (order.valorPago || 0).toFixed(2).replace('.', ','),
+    saldo: ((order.total || 0) - (order.valorPago || 0)).toFixed(2).replace('.', ',')
   }, EMAILJS_PUBKEY)
   .then(() => console.log('Email enviado para:', order.compradorEmail))
   .catch((e) => console.log('Falha no email silenciosa:', e));
@@ -98,6 +106,7 @@ export const updateOrderStatus = async (id, status, acao) => {
   const snap = await get(oRef);
   if (!snap.exists()) return null;
 
+  const order = snap.val();
   let finalStatus = status;
   let textAction = acao;
 
@@ -198,9 +207,9 @@ export const uploadComprovante = async (codigo, base64Image) => {
 // ─── Compress Image (browser canvas) ──────────────────────────────────────────
 const compressImage = (base64, maxSize = 400, quality = 0.7) => {
   return new Promise((resolve) => {
-    // Se não for imagem (ex: PDF), retorna string vazia
+    // Se não for imagem (ex: PDF), salva o base64 original para poder visualizar
     if (!base64.startsWith('data:image')) {
-      resolve('pdf://comprovante-pdf');
+      resolve(base64);
       return;
     }
     const img = new Image();

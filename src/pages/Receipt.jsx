@@ -88,15 +88,15 @@ export default function Receipt({ order, onClose }) {
           {/* Body */}
           <div className="receipt-body">
 
-            {/* Customer */}
-            <div className="receipt-section-title">Dados do Aluno</div>
+            {/* Customer Details */}
+            <div className="receipt-section-title">Dados do Aluno (Responsável)</div>
             <div className="receipt-row">
               <span className="receipt-label">Nome</span>
-              <span className="receipt-value">{nome}</span>
+              <span className="receipt-value">{order.compradorNome || nome}</span>
             </div>
             <div className="receipt-row">
-              <span className="receipt-label">Número</span>
-              <span className="receipt-value">#{numero}</span>
+              <span className="receipt-label">Telefone</span>
+              <span className="receipt-value">{order.compradorTelefone || '-'}</span>
             </div>
             <div className="receipt-row">
               <span className="receipt-label">Data</span>
@@ -112,7 +112,10 @@ export default function Receipt({ order, onClose }) {
                   {MODEL_LABELS[s.modelo] || s.modelo} · {s.cor}
                 </div>
                 <div className="receipt-shirt-sub">
-                  Tamanho {s.tamanho} · {s.qtd || 1}x · R$ {((s.qtd || 1) * 25).toFixed(2)}
+                  Tam {s.tamanho} · {s.qtd || 1}x · R$ {((s.qtd || 1) * 25).toFixed(2)}
+                </div>
+                <div className="receipt-shirt-sub" style={{ marginTop: 4, color: '#f0d0ff', opacity: 1 }}>
+                  Estampa: {s.nome || nome} #{s.numero || numero}
                 </div>
               </div>
             )) : (
