@@ -10,6 +10,7 @@ import { gerarPixPayload } from '../utils/pix';
 import Receipt from './Receipt';
 import Aurora from '../components/Aurora';
 import RotatingText from '../components/RotatingText';
+import HowItWorksPopup from '../components/HowItWorksPopup';
 
 const SHIRT_PRICE = 25;
 // Chave aleatória PIX
@@ -63,6 +64,9 @@ export default function ClientPage() {
   const [searchResult, setSearchResult] = useState(null);
   const [searchError, setSearchError]   = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
+
+  // How it works popup
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
 
   // ── Shirt helpers ──────────────────────────────────────────────────────────
   const updateShirt = (i, k, v) =>
@@ -189,6 +193,40 @@ export default function ClientPage() {
         speed={0.8}
       />
     </div>
+
+    {/* Floating Help Button */}
+    {step === 'menu' && (
+      <button 
+        onClick={() => setShowHowItWorks(true)}
+        className="animate-float"
+        style={{
+          position: 'fixed', bottom: 20, right: 20, zIndex: 50,
+          background: 'transparent', border: 'none', cursor: 'pointer',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+        }}
+      >
+        <div style={{
+          width: 66, height: 66, borderRadius: '50%', background: 'linear-gradient(135deg, var(--roxo-light), #3b0764)',
+          border: '3px solid #fff', boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
+          overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'transform 0.2s'
+        }}>
+          <img src={`${import.meta.env.BASE_URL}napolao.png`} alt="Napolão" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
+        <div style={{
+          background: '#fff', color: '#000', padding: '4px 10px', borderRadius: 12,
+          fontSize: 11, fontWeight: 'bold', boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          fontFamily: 'var(--fonte-cond)', letterSpacing: 1
+        }}>
+          Como funciona?
+        </div>
+      </button>
+    )}
+
+    {/* How it Works modal */}
+    {showHowItWorks && (
+      <HowItWorksPopup onClose={() => setShowHowItWorks(false)} />
+    )}
 
     {/* Receipt modal */}
     {showReceipt && finishedOrder && (

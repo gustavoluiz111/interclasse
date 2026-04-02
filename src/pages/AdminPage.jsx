@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchOrders, updateOrderStatus, updateOrderPayment, deleteOrder, deleteAllOrders } from '../firebase/api';
 import { RefreshCcw, LogOut, Download, AlertTriangle, CheckCircle } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function AdminPage() {
   const navigate = useNavigate();
@@ -108,6 +109,23 @@ export default function AdminPage() {
   // Stats
   const arrecadado = orders.reduce((acc, o) => acc + o.valorPago, 0);
   const aReceber = orders.reduce((acc, o) => acc + o.saldo, 0);
+
+  // Charts Math
+  const modelCount = {};
+  const numberCount = {};
+  orders.forEach(o => {
+    (o.camisas || []).forEach(c => {
+      const key = `${c.modelo} (${c.cor})`;
+      modelCount[key] = (modelCount[key] || 0) + (parseInt(c.qtd) || 1);
+      if (c.numero) {
+        numberCount[c.numero] = (numberCount[c.numero] || 0) + (parseInt(c.qtd) || 1);
+      }
+    });
+  });
+
+  const modelData = Object.keys(modelCount).map(k => ({ name: k, value: modelCount[k] })).sort((a,b) => b.value - a.value);
+  const numberData = Object.keys(numberCount).map(k => ({ name: k, value: numberCount[k] })).sort((a,b) => b.value - a.value).slice(0, 10);
+  const COLORS = ['#9333EA', '#DB2777', '#F59E0B', '#3B82F6', '#10B981', '#6366F1'];
 
   return (
     <div className="container" style={{ maxWidth: 800, margin: '0 auto', padding: '20px 16px', paddingBottom: 80 }}>
@@ -237,22 +255,60 @@ export default function AdminPage() {
       )}
 
       {tab === 'dashboard' && (
-        <div className="animate-fade-in grid-2">
-          <div className="card" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 40, fontFamily: 'var(--fonte-display)', color: '#4ade80' }}>R$ {arrecadado.toFixed(0)}</div>
-            <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: 'var(--texto2)' }}>Total Arrecadado</div>
+        <div className="animate-fade-in">
+          <div className="grid-2" style={{ marginBottom: 20 }}>
+            <div className="card" style={{ textAlign: 'center', marginBottom: 0 }}>
+              <div style={{ fontSize: 40, fontFamily: 'var(--fonte-display)', color: '#4ade80' }}>R$ {arrecadado.toFixed(0)}</div>
+              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: 'var(--texto2)' }}>Total Arrecadado</div>
+            </div>
+            <div className="card" style={{ textAlign: 'center', marginBottom: 0 }}>
+              <div style={{ fontSize: 40, fontFamily: 'var(--fonte-display)', color: '#f87171' }}>R$ {aReceber.toFixed(0)}</div>
+              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: 'var(--texto2)' }}>A Receber (Saldo)</div>
+            </div>
+            <div className="card" style={{ textAlign: 'center', marginBottom: 0 }}>
+              <div style={{ fontSize: 40, fontFamily: 'var(--fonte-display)', color: 'var(--dourado-light)' }}>{orders.length}</div>
+              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: 'var(--texto2)' }}>Qtd de Pedidos</div>
+            </div>
+            <div className="card" style={{ textAlign: 'center', marginBottom: 0 }}>
+              <div style={{ fontSize: 40, fontFamily: 'var(--fonte-display)' }}>{orders.filter(o => o.status === 'quitado').length}</div>
+              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: 'var(--texto2)' }}>Pedidos Quitados</div>
+            </div>
           </div>
-          <div className="card" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 40, fontFamily: 'var(--fonte-display)', color: '#f87171' }}>R$ {aReceber.toFixed(0)}</div>
-            <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: 'var(--texto2)' }}>A Receber (Saldo)</div>
-          </div>
-          <div className="card" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 40, fontFamily: 'var(--fonte-display)', color: 'var(--dourado-light)' }}>{orders.length}</div>
-            <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: 'var(--texto2)' }}>Qtd de Pedidos</div>
-          </div>
-          <div className="card" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 40, fontFamily: 'var(--fonte-display)' }}>{orders.filter(o => o.status === 'quitado').length}</div>
-            <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: 'var(--texto2)' }}>Pedidos Quitados</div>
+
+          <div className="grid-2">
+            {/* Pie Chart: Modelos */}
+            <div className="card" style={{ marginBottom: 0 }}>
+               <h3 className="card-title" style={{ fontSize: 13 }}><div className="dot" /> Modelos Mais Pedidos</h3>
+               {modelData.length > 0 ? (
+                 <div style={{ width: '100%', height: 260 }}>
+                   <ResponsiveContainer>
+                     <PieChart>
+                       <Pie data={modelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} fill="#8884d8" label={({name, value}) => `${name}: ${value}`}>
+                         {modelData.map((entry, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
+                       </Pie>
+                       <Tooltip contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: 8 }} itemStyle={{ color: '#fff' }} />
+                     </PieChart>
+                   </ResponsiveContainer>
+                 </div>
+               ) : <p style={{color: 'var(--texto2)'}}>Sem dados</p>}
+            </div>
+
+            {/* Bar Chart: Numeros */}
+            <div className="card" style={{ marginBottom: 0 }}>
+               <h3 className="card-title" style={{ fontSize: 13 }}><div className="dot" /> Top 10 Números</h3>
+               {numberData.length > 0 ? (
+                 <div style={{ width: '100%', height: 260 }}>
+                   <ResponsiveContainer>
+                     <BarChart data={numberData} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
+                       <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" fontSize={12} tickMargin={10} />
+                       <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} allowDecimals={false} />
+                       <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: 8 }} />
+                       <Bar dataKey="value" fill="#F59E0B" radius={[4,4,0,0]} name="Pedidos" />
+                     </BarChart>
+                   </ResponsiveContainer>
+                 </div>
+               ) : <p style={{color: 'var(--texto2)'}}>Sem dados</p>}
+            </div>
           </div>
         </div>
       )}
