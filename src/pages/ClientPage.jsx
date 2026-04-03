@@ -16,7 +16,6 @@ const SHIRT_PRICE = 25;
 // Chave aleatória PIX
 const PIX_KEY = 'c73111a7-eeec-49a3-b4a1-c7c73bba0b64';
 
-const SIZES = ['PP', 'P', 'M', 'G', 'GG', 'XG'];
 
 // Each model has its own photo + color embedded (clicking photo = selects model+cor)
 const BASE_URL = import.meta.env.BASE_URL;
@@ -67,6 +66,9 @@ export default function ClientPage() {
 
   // How it works popup
   const [showHowItWorks, setShowHowItWorks] = useState(false);
+
+  // Size chart popup
+  const [showSizeChart, setShowSizeChart] = useState(false);
 
   // ── Shirt helpers ──────────────────────────────────────────────────────────
   const updateShirt = (i, k, v) =>
@@ -226,6 +228,64 @@ export default function ClientPage() {
     {/* How it Works modal */}
     {showHowItWorks && (
       <HowItWorksPopup onClose={() => setShowHowItWorks(false)} />
+    )}
+
+    {/* Size Chart Modal */}
+    {showSizeChart && (
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.8)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
+      }} onClick={() => setShowSizeChart(false)}>
+        <div className="card animate-fade-in" style={{ maxWidth: 500, width: '100%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h2 className="card-title" style={{ margin: 0 }}>Tabela de Medidas</h2>
+            <button onClick={() => setShowSizeChart(false)} style={{ background: 'none', border: 'none', color: 'var(--texto)', fontSize: 24, cursor: 'pointer' }}>&times;</button>
+          </div>
+          
+          <h3 style={{ color: 'var(--dourado-light)', marginBottom: 8, fontSize: 16 }}>Adulto</h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24, textAlign: 'center', fontSize: 14 }}>
+            <thead>
+              <tr style={{ background: 'rgba(255,255,255,0.1)' }}>
+                <th style={{ padding: 8, border: '1px solid var(--cinza3)' }}>Tamanho</th>
+                <th style={{ padding: 8, border: '1px solid var(--cinza3)' }}>Altura</th>
+                <th style={{ padding: 8, border: '1px solid var(--cinza3)' }}>Largura</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[['PP', '59 cm', '44 cm'], ['P', '62 cm', '45 cm'], ['M', '66 cm', '52 cm'], ['G', '69 cm', '56 cm'], ['GG', '74 cm', '58 cm'], ['XG', '82 cm', '65 cm']].map(row => (
+                <tr key={row[0]}>
+                  <td style={{ padding: 8, border: '1px solid var(--cinza3)', fontWeight: 'bold' }}>{row[0]}</td>
+                  <td style={{ padding: 8, border: '1px solid var(--cinza3)' }}>{row[1]}</td>
+                  <td style={{ padding: 8, border: '1px solid var(--cinza3)' }}>{row[2]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <h3 style={{ color: 'var(--dourado-light)', marginBottom: 8, fontSize: 16 }}>Infantil</h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center', fontSize: 14 }}>
+            <thead>
+              <tr style={{ background: 'rgba(255,255,255,0.1)' }}>
+                <th style={{ padding: 8, border: '1px solid var(--cinza3)' }}>Tamanho</th>
+                <th style={{ padding: 8, border: '1px solid var(--cinza3)' }}>Altura</th>
+                <th style={{ padding: 8, border: '1px solid var(--cinza3)' }}>Largura</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[['4A', '50 cm', '37 cm'], ['6A', '53 cm', '40 cm'], ['8A', '58 cm', '43 cm'], ['10A', '60 cm', '45 cm'], ['12A', '65 cm', '47 cm']].map(row => (
+                <tr key={row[0]}>
+                  <td style={{ padding: 8, border: '1px solid var(--cinza3)', fontWeight: 'bold' }}>{row[0]}</td>
+                  <td style={{ padding: 8, border: '1px solid var(--cinza3)' }}>{row[1]}</td>
+                  <td style={{ padding: 8, border: '1px solid var(--cinza3)' }}>{row[2]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{ fontSize: 12, color: 'var(--texto2)', marginTop: 16, textAlign: 'center' }}>
+            * As medidas podem sofrer variações de até 2cm.
+          </p>
+        </div>
+      </div>
     )}
 
     {/* Receipt modal */}
@@ -415,10 +475,20 @@ export default function ClientPage() {
 
               {/* Size */}
               <div className="form-group">
-                <label>Tamanho</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <label style={{ margin: 0 }}>Tamanho</label>
+                  <button type="button" onClick={() => setShowSizeChart(true)} style={{ color: 'var(--roxo-light)', textDecoration: 'underline', background: 'none', border: 'none', fontSize: 12, cursor: 'pointer', padding: 0 }}>
+                    Ver Tabela de Medidas
+                  </button>
+                </div>
                 <select value={s.tamanho} onChange={e => updateShirt(idx, 'tamanho', e.target.value)}>
                   <option value="">Escolher</option>
-                  {SIZES.map(sz => <option key={sz}>{sz}</option>)}
+                  <optgroup label="Adulto">
+                    {['PP', 'P', 'M', 'G', 'GG', 'XG'].map(sz => <option key={sz} value={sz}>{sz}</option>)}
+                  </optgroup>
+                  <optgroup label="Infantil">
+                    {['4A', '6A', '8A', '10A', '12A'].map(sz => <option key={sz} value={sz}>{sz}</option>)}
+                  </optgroup>
                 </select>
               </div>
             </div>
