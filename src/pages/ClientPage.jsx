@@ -14,7 +14,7 @@ import HowItWorksPopup from '../components/HowItWorksPopup';
 
 const SHIRT_PRICE = 25;
 // Chave aleatória PIX
-const PIX_KEY = '76596b6d-8faa-4d4d-8d40-b7e261b11cf3';
+const PIX_KEY = 'c73111a7-eeec-49a3-b4a1-c7c73bba0b64';
 
 const SIZES = ['PP', 'P', 'M', 'G', 'GG', 'XG'];
 
@@ -509,12 +509,12 @@ export default function ClientPage() {
               Valor: <strong style={{ color: 'var(--dourado-light)', fontSize: 18 }}>R$ {valorPago.toFixed(2).replace('.', ',')}</strong><br />
               <span style={{ fontSize: 12 }}>({pagamento === '2x' ? '1ª Parcela' : 'Pagamento Único'})</span>
             </p>
-            {/* QR Code real do usuário */}
+            {/* QR Code dinâmico do usuário */}
             <div style={{
               background: '#fff', padding: 14, borderRadius: 16, display: 'inline-block',
               marginBottom: 18, boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
             }}>
-              <img src={`${import.meta.env.BASE_URL}pix.jpg`} alt="QR Code PIX" style={{ width: 200, height: 200, objectFit: 'contain', display: 'block' }} />
+              <QRCodeSVG value={pixPayload} size={200} />
             </div>
             <div style={{
               background: 'var(--cinza2)', border: '1px solid var(--cinza3)',
