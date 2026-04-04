@@ -22,8 +22,6 @@ const BASE_URL = import.meta.env.BASE_URL;
 const MODELS = [
   { id: 'Roxa',   cor: 'Roxa',   label: 'ROXA',   desc: 'Camisa Roxa Napoli',   img: `${BASE_URL}roxo.jpeg`,   accent: '#7C3AED' },
   { id: 'Rosa',   cor: 'Rosa',   label: 'ROSA',   desc: 'Camisa Rosa Napoli',   img: `${BASE_URL}rosa.jpeg`,   accent: '#EC4899' },
-  { id: 'Preta',  cor: 'Preta',  label: 'PRETA',  desc: 'Camisa Preta Napoli',  img: `${BASE_URL}preta.jpeg`,  accent: '#888' },
-  { id: 'Branca', cor: 'Branca', label: 'BRANCA', desc: 'Camisa Branca Napoli', img: `${BASE_URL}branco.jpeg`, accent: '#D4AF37' },
 ];
 
 const emptyShirt = () => ({ modelo: '', cor: '', tamanho: '', qtd: 1, nome: '', numero: '' });
