@@ -800,6 +800,14 @@ function toast(msg){
   t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2800);
 }
+
+// Bloqueio Básico de DevTools
+document.addEventListener('contextmenu', event => event.preventDefault());
+document.addEventListener('keydown', function (event) {
+  if (event.keyCode == 123) { event.preventDefault(); } // F12
+  if (event.ctrlKey && event.shiftKey && (event.keyCode == 73 || event.keyCode == 74 || event.keyCode == 67)) { event.preventDefault(); } // Ctrl+Shift+I/J/C
+  if (event.ctrlKey && event.keyCode == 85) { event.preventDefault(); } // Ctrl+U
+});
 </script>
 </body>
 </html>

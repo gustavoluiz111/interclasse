@@ -12,5 +12,22 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Bloqueio Básico de DevTools (Impede usuários comuns de espiar o código)
+      document.addEventListener('contextmenu', event => event.preventDefault());
+      document.addEventListener('keydown', function (event) {
+        // Bloqueia F12
+        if (event.keyCode == 123) {
+          event.preventDefault();
+        }
+        // Bloqueia Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+Shift+C / Ctrl+U
+        if (event.ctrlKey && event.shiftKey && (event.keyCode == 73 || event.keyCode == 74 || event.keyCode == 67)) {
+          event.preventDefault();
+        }
+        if (event.ctrlKey && event.keyCode == 85) {
+          event.preventDefault();
+        }
+      });
+    </script>
   </body>
 </html>
