@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchOrders, updateOrderStatus, updateOrderPayment, deleteOrder, deleteAllOrders } from '../firebase/api';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebase/config';
 import { RefreshCcw, LogOut, Download, AlertTriangle, CheckCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
@@ -13,10 +15,6 @@ export default function AdminPage() {
   const [viewingComprovante, setViewingComprovante] = useState(null);
 
   useEffect(() => {
-    if (!localStorage.getItem('admin_asaph_auth')) {
-      navigate('/admin');
-      return;
-    }
     loadData();
   }, []);
 
@@ -28,9 +26,13 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin_asaph_auth');
-    navigate('/admin');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/admin');
+    } catch(err) {
+      console.error('Erro ao deslogar', err);
+    }
   };
 
   const aprovar = async (id) => {

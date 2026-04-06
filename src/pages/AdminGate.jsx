@@ -1,19 +1,26 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock } from 'lucide-react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase/config';
 
 export default function AdminGate() {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (password === '121415gugu' || password === 'asaph') {
-      localStorage.setItem('admin_asaph_auth', 'true');
+    setError(false);
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
       navigate('/admin/dashboard');
-    } else {
+    } catch(err) {
       setError(true);
+      setLoading(false);
     }
   };
 
@@ -30,6 +37,17 @@ export default function AdminGate() {
         </div>
 
         <form onSubmit={handleLogin}>
+          <div className="form-group" style={{ marginBottom: 16 }}>
+            <label>E-mail de Acesso</label>
+            <input 
+              type="email" 
+              placeholder="admin@interclasse.com" 
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              style={{ borderColor: error ? '#f87171' : '' }}
+              required
+            />
+          </div>
           <div className="form-group">
             <label>Senha de Acesso</label>
             <input 
@@ -38,10 +56,13 @@ export default function AdminGate() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               style={{ borderColor: error ? '#f87171' : '' }}
+              required
             />
-            {error && <p style={{ color: '#f87171', fontSize: 12, marginTop: 8 }}>Senha incorreta.</p>}
+            {error && <p style={{ color: '#f87171', fontSize: 12, marginTop: 8 }}>E-mail ou senha incorretos.</p>}
           </div>
-          <button type="submit" className="btn btn-primary" style={{ marginTop: 12 }}>Entrar no Painel</button>
+          <button type="submit" className="btn btn-primary" style={{ marginTop: 12 }} disabled={loading}>
+            {loading ? 'Autenticando...' : 'Entrar no Painel'}
+          </button>
         </form>
       </div>
     </div>
