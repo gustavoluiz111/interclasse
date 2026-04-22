@@ -286,12 +286,12 @@ export default function ClientPage() {
       </div>
     )}
 
-    {/* Receipt modal */}
-    {showReceipt && finishedOrder && (
-      <Receipt order={finishedOrder} onClose={() => setShowReceipt(false)} />
-    )}
-    {searchResult && showReceipt && (
-      <Receipt order={searchResult} onClose={() => setShowReceipt(false)} />
+    {/* Receipt modal — mostra searchResult se disponível, senão finishedOrder */}
+    {showReceipt && (searchResult || finishedOrder) && (
+      <Receipt
+        order={searchResult || finishedOrder}
+        onClose={() => setShowReceipt(false)}
+      />
     )}
 
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px 90px', position: 'relative', zIndex: 1 }}>
@@ -607,18 +607,19 @@ export default function ClientPage() {
               background: comprovanteBase64 ? 'rgba(124,58,237,0.06)' : 'transparent',
               transition: 'all 0.25s',
             }}>
-              <input type="file" style={{ display: 'none' }} accept="image/*,application/pdf" onChange={handleFileChange} />
+              <input type="file" style={{ display: 'none' }} accept="application/pdf" onChange={handleFileChange} />
               {comprovanteBase64 ? (
                 <>
                   <CheckCircle2 color="var(--roxo-light)" size={40} style={{ margin: '0 auto 10px' }} />
-                  <div style={{ color: 'var(--texto)', fontWeight: 600 }}>Comprovante anexado!</div>
-                  <img src={comprovanteBase64} alt="Preview" style={{ width: 90, borderRadius: 8, marginTop: 12, border: '2px solid var(--cinza3)' }} />
+                  <div style={{ color: 'var(--texto)', fontWeight: 600 }}>PDF anexado com sucesso!</div>
+                  <div style={{ color: 'var(--texto2)', fontSize: 12, marginTop: 6 }}>📄 Comprovante PIX em PDF</div>
                 </>
               ) : (
                 <>
                   <Upload color="var(--texto2)" size={36} style={{ margin: '0 auto 10px' }} />
-                  <div style={{ color: 'var(--texto2)', fontSize: 14 }}>Toque para anexar o comprovante</div>
-                  <div style={{ color: 'var(--texto2)', fontSize: 12, marginTop: 4 }}>PNG, JPG ou PDF</div>
+                  <div style={{ color: 'var(--texto)', fontWeight: 600, fontSize: 15 }}>Anexar comprovante PIX</div>
+                  <div style={{ color: 'var(--texto2)', fontSize: 13, marginTop: 6 }}>Somente PDF (baixe o comprovante no seu banco)</div>
+                  <div style={{ color: 'var(--texto2)', fontSize: 11, marginTop: 4, opacity: 0.7 }}>No banco → Comprovante → Compartilhar → Salvar como PDF</div>
                 </>
               )}
             </label>

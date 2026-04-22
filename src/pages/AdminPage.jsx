@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchOrders, updateOrderStatus, updateOrderPayment, deleteOrder, deleteAllOrders } from '../firebase/api';
+import { fetchOrders, updateOrderStatus, updateOrderPayment, deleteOrder, deleteAllOrders, updateOrderData } from '../firebase/api';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { RefreshCcw, LogOut, Download, AlertTriangle, CheckCircle } from 'lucide-react';
@@ -13,6 +13,8 @@ export default function AdminPage() {
   const [tab, setTab] = useState('pedidos');
   const [filter, setFilter] = useState('todos');
   const [viewingComprovante, setViewingComprovante] = useState(null);
+  const [editingOrder, setEditingOrder] = useState(null);
+  const [editFormData, setEditFormData] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -75,6 +77,38 @@ export default function AdminPage() {
     if (pwd !== '121415gugu' && pwd !== 'asaph') return alert("Senha incorreta. Ação cancelada.");
     await deleteAllOrders();
     loadData();
+  };
+
+  const startEditing = (order) => {
+    setEditingOrder(order.id);
+    setEditFormData(JSON.parse(JSON.stringify(order))); // deep copy
+  };
+
+  const handleEditChange = (field, value) => {
+    setEditFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleEditCamisaChange = (index, field, value) => {
+    const newCamisas = [...(editFormData.camisas || [])];
+    newCamisas[index] = { ...newCamisas[index], [field]: value };
+    setEditFormData(prev => ({ ...prev, camisas: newCamisas }));
+  };
+
+  const saveEdit = async () => {
+    try {
+        const payload = { ...editFormData };
+        delete payload.id;
+        payload.total = parseFloat(payload.total) || 0;
+        payload.valorPago = parseFloat(payload.valorPago) || 0;
+        payload.saldo = (payload.total - payload.valorPago) || 0;
+        
+        await updateOrderData(editingOrder, payload);
+        alert("Pedido editado com sucesso!");
+        setEditingOrder(null);
+        loadData();
+    } catch(err) {
+        alert("Erro ao editar: " + err.message);
+    }
   };
 
   const exportCSV = () => {
@@ -201,6 +235,18 @@ export default function AdminPage() {
                 <div><span style={{ color: 'var(--texto2)', fontSize: 11, textTransform: 'uppercase', display: 'block' }}>Saldo Aberto</span> <strong style={{ color: o.saldo > 0 ? '#f87171' : '#4ade80' }}>R$ {o.saldo.toFixed(2)}</strong></div>
               </div>
 
+              {/* Aviso: sem comprovante */}
+              {(!o.comprovanteUrl || o.comprovanteAnexado === false) && (
+                <div style={{
+                  background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.4)',
+                  borderRadius: 8, padding: '8px 12px', marginBottom: 10,
+                  display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#fca5a5',
+                }}>
+                  <AlertTriangle size={15} style={{ flexShrink: 0 }} />
+                  <span><strong>Sem comprovante de pagamento</strong> — o cliente não anexou ou o upload falhou.</span>
+                </div>
+              )}
+
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {(o.status === 'analise') && (
                   <>
@@ -224,14 +270,12 @@ export default function AdminPage() {
                     style={{ borderColor: 'var(--roxo-light)', color: 'var(--roxo-light)' }}
                     onClick={() => {
                       if (o.comprovanteUrl.startsWith('data:application/pdf') || o.comprovanteUrl.startsWith('data:application/octet')) {
-                        // PDF: abre em nova aba
                         const blob = new Blob(
                           [Uint8Array.from(atob(o.comprovanteUrl.split(',')[1]), c => c.charCodeAt(0))],
                           { type: 'application/pdf' }
                         );
                         window.open(URL.createObjectURL(blob), '_blank');
                       } else {
-                        // Imagem: abre modal
                         setViewingComprovante(o.comprovanteUrl);
                       }
                     }}
@@ -243,9 +287,16 @@ export default function AdminPage() {
                   <span style={{ fontSize: 12, color: 'var(--dourado-light)', padding: '6px 0' }}>Comprovante registrado (sem prévia)</span>
                 )}
                 
+                <button
+                  className="btn btn-secondary btn-sm"
+                  style={{ marginLeft: 'auto', marginRight: 8, borderColor: '#a855f7', color: '#a855f7' }}
+                  onClick={() => startEditing(o)}
+                >
+                  ✏️ Editar
+                </button>
                 <button 
                   className="btn btn-danger btn-sm" 
-                  style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid #ef4444', color: '#ef4444' }} 
+                  style={{ background: 'transparent', border: '1px solid #ef4444', color: '#ef4444' }} 
                   onClick={() => apagar(o.id)}
                 >
                   🗑️ Excluir
@@ -407,6 +458,89 @@ export default function AdminPage() {
               alt="Comprovante"
               style={{ maxWidth: '100%', maxHeight: '85vh', borderRadius: 12, border: '2px solid var(--roxo-light)', display: 'block' }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edição */}
+      {editingOrder && editFormData && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 99999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
+          }}
+          onClick={() => setEditingOrder(null)}
+        >
+          <div
+            style={{
+              background: 'var(--fundo)', border: '1px solid var(--roxo-light)', borderRadius: 12,
+              padding: 20, width: '100%', maxWidth: 600, maxHeight: '90vh', overflowY: 'auto'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h2 style={{ fontFamily: 'var(--fonte-cond)', marginBottom: 20, color: 'var(--dourado)' }}>Editar Pedido</h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--texto2)' }}>Nome do Comprador</label>
+                <input className="input" style={{ width: '100%' }} value={editFormData.compradorNome || ''} onChange={e => handleEditChange('compradorNome', e.target.value)} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--texto2)' }}>Telefone</label>
+                <input className="input" style={{ width: '100%' }} value={editFormData.compradorTelefone || ''} onChange={e => handleEditChange('compradorTelefone', e.target.value)} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--texto2)' }}>Email</label>
+                <input className="input" style={{ width: '100%' }} value={editFormData.compradorEmail || ''} onChange={e => handleEditChange('compradorEmail', e.target.value)} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--texto2)' }}>Status</label>
+                <select className="input" style={{ width: '100%' }} value={editFormData.status || ''} onChange={e => handleEditChange('status', e.target.value)}>
+                    <option value="analise">Em Análise</option>
+                    <option value="aprovado">Aprovado</option>
+                    <option value="quitado">Quitado</option>
+                    <option value="recusado">Recusado</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--texto2)' }}>Total (R$)</label>
+                <input className="input" type="number" step="0.01" style={{ width: '100%' }} value={editFormData.total || 0} onChange={e => handleEditChange('total', e.target.value)} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--texto2)' }}>Pago (R$)</label>
+                <input className="input" type="number" step="0.01" style={{ width: '100%' }} value={editFormData.valorPago || 0} onChange={e => handleEditChange('valorPago', e.target.value)} />
+              </div>
+            </div>
+
+            {/* Camisas loop */}
+            <h3 style={{ fontSize: 14, color: 'var(--dourado-light)', marginBottom: 10, marginTop: 20 }}>Editar Camisas</h3>
+            {(editFormData.camisas || []).map((c, i) => (
+              <div key={i} style={{ border: '1px solid var(--cinza3)', padding: 12, borderRadius: 8, marginBottom: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div>
+                    <label style={{ fontSize: 11, color: 'var(--texto2)' }}>Nome nas Costas</label>
+                    <input className="input" style={{ width: '100%' }} value={c.nome || ''} onChange={e => handleEditCamisaChange(i, 'nome', e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, color: 'var(--texto2)' }}>Número</label>
+                    <input className="input" style={{ width: '100%' }} value={c.numero || ''} onChange={e => handleEditCamisaChange(i, 'numero', e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, color: 'var(--texto2)' }}>Tamanho</label>
+                    <input className="input" style={{ width: '100%' }} value={c.tamanho || ''} onChange={e => handleEditCamisaChange(i, 'tamanho', e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, color: 'var(--texto2)' }}>Quantidade</label>
+                    <input className="input" type="number" style={{ width: '100%' }} value={c.qtd || ''} onChange={e => handleEditCamisaChange(i, 'qtd', e.target.value)} />
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <button className="btn btn-primary" style={{ flex: 1 }} onClick={saveEdit}>Salvar Alterações</button>
+              <button className="btn btn-secondary" onClick={() => setEditingOrder(null)}>Cancelar</button>
+            </div>
           </div>
         </div>
       )}
