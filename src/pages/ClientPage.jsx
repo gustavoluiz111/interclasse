@@ -5,7 +5,7 @@ import {
   CheckCircle2, ChevronRight, Copy, Upload, ArrowLeft,
   Search, Plus, Trash2, Ticket, AlertCircle, Lock
 } from 'lucide-react';
-import { createOrder, uploadComprovante, fetchOrderByCodigo } from '../firebase/api';
+import { createOrder, uploadComprovante, fetchOrderByCodigo, uploadComprovante2 } from '../firebase/api';
 import { gerarPixPayload } from '../utils/pix';
 import Receipt from './Receipt';
 import Aurora from '../components/Aurora';
@@ -44,7 +44,7 @@ export default function ClientPage() {
   const [compradorEmail, setCompradorEmail] = useState('');
   const [compradorTelefone, setCompradorTelefone] = useState('');
 
-  const [pagamento, setPagamento] = useState('');
+  const [pagamento, setPagamento] = useState('1x');
 
   // Shirts
   const [camisas, setCamisas] = useState([emptyShirt()]);
@@ -298,6 +298,15 @@ export default function ClientPage() {
 
       {/* ─── HEADER ─────────────────────────────────────────────────────────── */}
       <div style={{ textAlign: 'center', marginBottom: 36 }} className="animate-fade-in">
+        {/* ─── AVISO PRAZO ─── */}
+        <div style={{ background: 'linear-gradient(135deg, rgba(217,119,6,0.18), rgba(236,72,153,0.10))', border: '1px solid var(--dourado)', borderRadius: 12, padding: '14px 18px', marginBottom: 24, display: 'flex', alignItems: 'flex-start', gap: 12, textAlign: 'left' }}>
+          <div style={{ fontSize: 24, flexShrink: 0 }}>📅</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: 'var(--fonte-cond)', fontSize: 14, letterSpacing: 1, color: 'var(--dourado-light)', textTransform: 'uppercase', marginBottom: 4 }}>Prazo de pedidos encerra em breve!</div>
+            <div style={{ fontSize: 13, color: 'var(--texto2)', lineHeight: 1.5 }}>Recebimento de pedidos até <strong style={{ color: 'var(--dourado-light)' }}>17 ou 18 de junho</strong> · Entrega prevista em <strong style={{ color: 'var(--dourado-light)' }}>30 dias</strong> após o fechamento</div>
+          </div>
+        </div>
+
         <div style={{
           background: 'linear-gradient(135deg, var(--dourado), var(--dourado-light))',
           display: 'inline-block', padding: '4px 14px', borderRadius: 5,
@@ -507,16 +516,20 @@ export default function ClientPage() {
                 R$ {total.toFixed(2).replace('.', ',')}
               </div>
             </div>
-            <div className="grid-2">
+            
+            <div style={{ background: 'rgba(217,119,6,0.08)', border: '1px solid var(--dourado)', borderRadius: 10, padding: '12px 14px', marginBottom: 14, fontSize: 13, color: 'var(--dourado-light)', textAlign: 'center' }}>
+              ⚠️ No momento estamos aceitando apenas <strong>pagamento à vista (parcela única)</strong>.
+            </div>
+
+            <div className="grid-1" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
               {[
-                { id: '1x', label: 'À Vista', sub: `R$ ${total.toFixed(2)}` },
-                { id: '2x', label: 'Parcelado', sub: `2× R$ ${(total/2).toFixed(2)}` },
+                { id: '1x', label: 'Pagamento único (à vista)', sub: `R$ ${total.toFixed(2).replace('.', ',')}` },
               ].map(op => (
                 <div key={op.id} onClick={() => setPagamento(op.id)} style={{
-                  background: pagamento === op.id ? 'rgba(124,58,237,0.12)' : 'var(--cinza2)',
-                  border: `2px solid ${pagamento === op.id ? 'var(--roxo-light)' : 'var(--cinza3)'}`,
+                  background: 'rgba(124,58,237,0.12)',
+                  border: '2px solid var(--roxo-light)',
                   borderRadius: 12, padding: 16, textAlign: 'center', cursor: 'pointer',
-                  boxShadow: pagamento === op.id ? '0 0 16px rgba(124,58,237,0.2)' : 'none',
+                  boxShadow: '0 0 16px rgba(124,58,237,0.2)',
                   transition: 'all 0.2s',
                 }}>
                   <div style={{ fontFamily: 'var(--fonte-display)', fontSize: 26, color: 'var(--dourado-light)' }}>{op.sub}</div>
@@ -575,7 +588,7 @@ export default function ClientPage() {
             <h2 className="card-title" style={{ justifyContent: 'center' }}>Pagar via PIX</h2>
             <p style={{ color: 'var(--texto2)', fontSize: 14, marginBottom: 18 }}>
               Valor: <strong style={{ color: 'var(--dourado-light)', fontSize: 18 }}>R$ {valorPago.toFixed(2).replace('.', ',')}</strong><br />
-              <span style={{ fontSize: 12 }}>({pagamento === '2x' ? '1ª Parcela' : 'Pagamento Único'})</span>
+              <span style={{ fontSize: 12 }}>(Pagamento Único)</span>
             </p>
             {/* QR Code dinâmico do usuário */}
             <div style={{
@@ -750,8 +763,8 @@ export default function ClientPage() {
               {/* Financials */}
               <div className="grid-2" style={{ gap: 10, marginBottom: 14 }}>
                 {[
-                  { label: 'Total', value: `R$ ${(searchResult.total||0).toFixed(2)}`, color: 'var(--dourado-light)' },
-                  { label: 'Saldo Aberto', value: `R$ ${(searchResult.saldo||0).toFixed(2)}`, color: searchResult.saldo > 0 ? '#f87171' : '#4ade80' },
+                  { label: 'Total', value: `R$ ${(searchResult.total||0).toFixed(2).replace('.',',')}`, color: 'var(--dourado-light)' },
+                  { label: 'Saldo Aberto', value: `R$ ${(searchResult.saldo||0).toFixed(2).replace('.',',')}`, color: searchResult.saldo > 0 ? '#f87171' : '#4ade80' },
                 ].map((item, i) => (
                   <div key={i} style={{ background: 'var(--cinza2)', borderRadius: 10, padding: 12, textAlign: 'center' }}>
                     <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1 }}>{item.label}</div>
@@ -759,6 +772,64 @@ export default function ClientPage() {
                   </div>
                 ))}
               </div>
+
+              {searchResult.saldo > 0 && searchResult.status === 'aprovado' && (
+                <div style={{ background: 'rgba(107,33,168,0.15)', border: '1px solid var(--roxo-light)', borderRadius: 12, padding: 18, marginBottom: 14 }}>
+                  <div style={{ fontFamily: 'var(--fonte-cond)', fontSize: 16, letterSpacing: 1, color: '#a78bfa', textTransform: 'uppercase', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    💸 Pagar parcela restante
+                    <span style={{ background: searchResult.parcela2Status === 'analise' ? 'rgba(96,165,250,0.2)' : 'rgba(248,113,113,0.2)', color: searchResult.parcela2Status === 'analise' ? '#60a5fa' : '#f87171', border: `1px solid ${searchResult.parcela2Status === 'analise' ? '#60a5fa' : '#f87171'}`, borderRadius: 12, fontSize: 11, padding: '2px 8px', letterSpacing: 1 }}>
+                      {searchResult.parcela2Status === 'analise' ? 'Aguardando' : 'Pendente'}
+                    </span>
+                  </div>
+                  {searchResult.parcela2Status === 'analise' ? (
+                    <p style={{ fontSize: 13, color: 'var(--texto2)' }}>Seu comprovante da 2ª parcela foi enviado e está sendo verificado pelo administrador. Assim que aprovado, seu pedido será marcado como <strong>Quitado</strong>.</p>
+                  ) : (
+                    <>
+                      <p style={{ fontSize: 13, color: 'var(--texto2)', marginBottom: 10 }}>Faça o pagamento via PIX e anexe o comprovante abaixo.</p>
+                      <div style={{ background: 'var(--cinza2)', borderRadius: 12, padding: 16, textAlign: 'center', marginBottom: 14 }}>
+                        <div style={{ background: '#fff', borderRadius: 10, padding: 16, display: 'inline-block', marginBottom: 12 }}>
+                          <QRCodeSVG value={gerarPixPayload(PIX_KEY, searchResult.saldo.toString(), searchResult.compradorNome || searchResult.nome || 'PAGADOR')} size={160} />
+                        </div>
+                        <div style={{ background: 'var(--cinza)', border: '1px solid var(--cinza3)', borderRadius: 8, padding: '10px 14px', fontFamily: 'monospace', fontSize: 14, color: 'var(--dourado-light)', wordBreak: 'break-all', marginBottom: 10 }}>📱 {PIX_KEY}</div>
+                        <button className="btn btn-secondary btn-sm" style={{ margin: '0 auto', background: 'var(--roxo)', color: '#fff', border: 'none' }} onClick={() => { navigator.clipboard.writeText(PIX_KEY); alert('Chave Pix copiada!'); }}>Copiar chave PIX</button>
+                        <p style={{ fontSize: 12, color: 'var(--texto2)', marginTop: 10 }}>Valor a pagar: <strong style={{ color: 'var(--dourado-light)' }}>R$ {searchResult.saldo.toFixed(2).replace('.',',')}</strong></p>
+                      </div>
+                      
+                      <label style={{ display: 'block', border: `2px dashed ${comprovanteBase64 ? 'var(--roxo-light)' : 'var(--cinza3)'}`, borderRadius: 10, padding: 20, textAlign: 'center', cursor: 'pointer', background: comprovanteBase64 ? 'rgba(124,58,237,0.06)' : 'transparent', transition: 'all 0.25s', marginBottom: 14 }}>
+                        <input type="file" style={{ display: 'none' }} accept="application/pdf,image/*" onChange={handleFileChange} />
+                        {comprovanteBase64 ? (
+                          <>
+                            <CheckCircle2 color="var(--roxo-light)" size={30} style={{ margin: '0 auto 8px' }} />
+                            <div style={{ color: 'var(--texto)', fontWeight: 600, fontSize: 13 }}>Arquivo anexado!</div>
+                          </>
+                        ) : (
+                          <>
+                            <Upload color="var(--texto2)" size={26} style={{ margin: '0 auto 8px' }} />
+                            <div style={{ color: 'var(--texto)', fontWeight: 600, fontSize: 13 }}>Anexar comprovante do pagamento</div>
+                            <div style={{ color: 'var(--texto2)', fontSize: 11, marginTop: 4 }}>PDF ou Imagem</div>
+                          </>
+                        )}
+                      </label>
+                      <button className="btn btn-primary" onClick={async () => {
+                        if (!comprovanteBase64) return alert('Anexe o comprovante!');
+                        setSearchLoading(true);
+                        try {
+                          await uploadComprovante2(searchResult.codigo, comprovanteBase64);
+                          alert('Comprovante enviado com sucesso!');
+                          setComprovanteBase64('');
+                          handleSearch(); // reload
+                        } catch (e) {
+                          alert('Erro ao enviar comprovante: ' + e.message);
+                        } finally {
+                          setSearchLoading(false);
+                        }
+                      }} disabled={searchLoading}>
+                        {searchLoading ? 'Enviando...' : 'Enviar comprovante da 2ª parcela ✓'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
 
               <button className="btn btn-gold btn-sm" style={{ width: '100%', marginBottom: 10 }} onClick={() => setShowReceipt(true)}>
                 <Ticket size={16} /> Ver Comprovante Detalhado

@@ -216,3 +216,64 @@ export const uploadComprovante = async (codigo, base64Pdf) => {
     return null;
   }
 };
+
+// ─── Upload Comprovante 2ª Parcela ──────────────────────────────────────────────
+export const uploadComprovante2 = async (codigo, base64) => {
+  const snap = await get(ref(db, 'orders'));
+  if (snap.exists()) {
+    const data = snap.val();
+    const entry = Object.entries(data).find(([, v]) => v.codigo === codigo);
+    if (entry) {
+      const now = new Date().toLocaleDateString('pt-BR');
+      const historico = [...(entry[1].historico || []), {
+        data: now,
+        acao: 'Comprovante da 2ª parcela enviado — aguardando aprovação do admin'
+      }];
+      await update(ref(db, `orders/${entry[0]}`), {
+        comprovante2Url: base64,
+        parcela2Status: 'analise',
+        historico
+      });
+      return true;
+    }
+  }
+  throw new Error("Pedido não encontrado");
+};
+
+// ─── Aprovar 2ª Parcela ───────────────────────────────────────────────────────
+export const aprovarParcela2 = async (id) => {
+  const oRef = ref(db, `orders/${id}`);
+  const snap = await get(oRef);
+  if (!snap.exists()) return;
+  const order = snap.val();
+  const now = new Date().toLocaleDateString('pt-BR');
+  const historico = [...(order.historico || []), {
+    data: now,
+    acao: '2ª parcela aprovada pelo admin — pedido QUITADO'
+  }];
+  await update(oRef, {
+    valorPago: order.total,
+    saldo: 0,
+    status: 'quitado',
+    parcela2Status: 'quitado',
+    historico
+  });
+};
+
+// ─── Recusar 2ª Parcela ───────────────────────────────────────────────────────
+export const recusarParcela2 = async (id) => {
+  const oRef = ref(db, `orders/${id}`);
+  const snap = await get(oRef);
+  if (!snap.exists()) return;
+  const order = snap.val();
+  const now = new Date().toLocaleDateString('pt-BR');
+  const historico = [...(order.historico || []), {
+    data: now,
+    acao: 'Comprovante da 2ª parcela recusado — envie outro'
+  }];
+  await update(oRef, {
+    parcela2Status: 'pendente',
+    comprovante2Url: '',
+    historico
+  });
+};

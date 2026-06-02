@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchOrders, updateOrderStatus, updateOrderPayment, deleteOrder, deleteAllOrders, updateOrderData } from '../firebase/api';
+import { fetchOrders, updateOrderStatus, updateOrderPayment, deleteOrder, deleteAllOrders, updateOrderData, aprovarParcela2, recusarParcela2 } from '../firebase/api';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { RefreshCcw, LogOut, Download, AlertTriangle, CheckCircle } from 'lucide-react';
@@ -180,6 +180,7 @@ export default function AdminPage() {
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20, overflowX: 'auto', paddingBottom: 5 }}>
         <button className={tab === 'pedidos' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'} onClick={() => setTab('pedidos')}>Lista de Pedidos</button>
+        <button className={tab === 'devedores' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'} onClick={() => setTab('devedores')}>Devedores</button>
         <button className={tab === 'grafica' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'} onClick={() => setTab('grafica')}>Tabela Produção</button>
         <button className={tab === 'dashboard' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'} onClick={() => setTab('dashboard')}>Dashboard & Stats</button>
         <button className={tab === 'export' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'} onClick={() => setTab('export')}>Exportar Dados</button>
@@ -304,6 +305,118 @@ export default function AdminPage() {
               </div>
             </div>
            ))}
+        </div>
+      )}
+
+      {tab === 'devedores' && (
+        <div className="animate-fade-in">
+          {(() => {
+            const devedores = orders.filter(p => p.saldo > 0 && p.status === 'aprovado');
+            const totalDevido = devedores.reduce((s, p) => s + p.saldo, 0);
+            const pendentes2 = orders.filter(p => p.parcela2Status === 'analise' && p.comprovante2Url);
+
+            return (
+              <>
+                <div className="card" style={{ marginBottom: 12 }}>
+                  <h2 className="card-title"><div className="dot" /> Lista de Devedores</h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+                    <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid #f87171', borderRadius: 10, padding: 14, textAlign: 'center' }}>
+                      <div style={{ fontFamily: 'var(--fonte-display)', fontSize: 32, color: '#f87171' }}>{devedores.length}</div>
+                      <div style={{ fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--texto2)', marginTop: 4 }}>Devedores</div>
+                    </div>
+                    <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid #f87171', borderRadius: 10, padding: 14, textAlign: 'center' }}>
+                      <div style={{ fontFamily: 'var(--fonte-display)', fontSize: 28, color: '#f87171' }}>R${totalDevido.toFixed(2).replace('.',',')}</div>
+                      <div style={{ fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--texto2)', marginTop: 4 }}>Total em aberto</div>
+                    </div>
+                  </div>
+                  
+                  {devedores.length === 0 ? (
+                    <p style={{ textAlign: 'center', padding: 20, color: 'var(--texto2)' }}>✅ Nenhum devedor! Todos quitados.</p>
+                  ) : (
+                    <div>
+                      {devedores.map(p => (
+                        <div key={p.id} style={{ background: 'var(--cinza2)', border: '1px solid #7f1d1d', borderRadius: 10, padding: 14, marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                          <div>
+                            <div style={{ fontFamily: 'var(--fonte-cond)', fontSize: 16, letterSpacing: 0.5 }}>{p.compradorNome || p.nome} <span style={{ color: 'var(--texto2)', fontWeight: 400 }}>#{p.numero}</span></div>
+                            <div style={{ fontSize: 11, color: 'var(--texto2)', marginTop: 2 }}>{p.codigo} · {p.camisas?.[0]?.tamanho || p.tamanho} · {p.camisas?.[0]?.modelo || p.modelo}</div>
+                            <div style={{ marginTop: 6 }}>
+                              <span className="status-badge" style={{ background: 'rgba(248,113,113,0.15)', color: '#f87171', border: '1px solid #b91c1c' }}>
+                                {p.parcela2Status === 'analise' ? 'Comprovante enviado' : 'Aguardando pagamento'}
+                              </span>
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontFamily: 'var(--fonte-display)', fontSize: 24, color: '#f87171' }}>R${p.saldo.toFixed(2).replace('.',',')}</div>
+                            <div style={{ fontSize: 11, color: 'var(--texto2)', letterSpacing: 1, textTransform: 'uppercase' }}>em aberto</div>
+                            {p.parcela2Status === 'analise' ? (
+                              <button className="btn btn-success btn-sm" style={{ marginTop: 8, width: '100%' }} onClick={async () => {
+                                await aprovarParcela2(p.id);
+                                loadData();
+                                alert('✓ 2ª parcela aprovada! Pedido quitado.');
+                              }}>✓ Aprovar pgto</button>
+                            ) : (
+                              <button className="btn btn-secondary btn-sm" style={{ marginTop: 8, width: '100%' }} onClick={() => registrarPagamento(p)}>+ Reg. pgto</button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="card" style={{ marginTop: 16 }}>
+                  <h2 className="card-title" style={{ color: '#60a5fa' }}><div className="dot" style={{ background: '#60a5fa' }} />Comprovantes 2ª Parcela — Aguardando aprovação</h2>
+                  {pendentes2.length === 0 ? (
+                    <p style={{ textAlign: 'center', padding: 16, color: 'var(--texto2)', fontSize: 13 }}>Nenhum comprovante pendente no momento.</p>
+                  ) : (
+                    <div>
+                      {pendentes2.map(p => (
+                        <div key={p.id} style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid #60a5fa', borderRadius: 10, padding: 14, marginBottom: 10 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                            <div>
+                              <div style={{ fontFamily: 'var(--fonte-cond)', fontSize: 15 }}>{p.compradorNome || p.nome} <span style={{ color: 'var(--texto2)' }}>#{p.numero}</span></div>
+                              <div style={{ fontSize: 12, color: 'var(--texto2)', marginTop: 2 }}>{p.codigo} · Saldo: <strong style={{ color: '#f87171' }}>R$ {p.saldo.toFixed(2).replace('.',',')}</strong></div>
+                            </div>
+                            <span style={{ background: 'rgba(96,165,250,0.2)', color: '#60a5fa', border: '1px solid #60a5fa', borderRadius: 12, fontSize: 11, padding: '2px 8px', letterSpacing: 1 }}>Aguardando</span>
+                          </div>
+                          
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+                            <button className="btn btn-secondary btn-sm" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => {
+                              if (p.comprovante2Url.startsWith('data:application/pdf') || p.comprovante2Url.startsWith('data:application/octet')) {
+                                const blob = new Blob(
+                                  [Uint8Array.from(atob(p.comprovante2Url.split(',')[1]), c => c.charCodeAt(0))],
+                                  { type: 'application/pdf' }
+                                );
+                                window.open(URL.createObjectURL(blob), '_blank');
+                              } else {
+                                setViewingComprovante(p.comprovante2Url);
+                              }
+                            }}>
+                              {p.comprovante2Url.startsWith('data:application') ? '📑 Ver PDF' : '🖼️ Ver Imagem'}
+                            </button>
+                            <span style={{ fontSize: 11, color: 'var(--texto2)' }}>ver comprovante anexado</span>
+                          </div>
+                          
+                          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                            <button className="btn btn-success btn-sm" onClick={async () => {
+                                await aprovarParcela2(p.id);
+                                loadData();
+                                alert('✓ 2ª parcela aprovada! Pedido quitado.');
+                            }}>✓ Aprovar</button>
+                            <button className="btn btn-danger btn-sm" onClick={async () => {
+                                await recusarParcela2(p.id);
+                                loadData();
+                                alert('Comprovante da 2ª parcela recusado.');
+                            }}>✗ Recusar</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            );
+          })()}
         </div>
       )}
 

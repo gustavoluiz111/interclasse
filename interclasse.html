@@ -74,12 +74,30 @@ select option{background:var(--cinza2);}
 .cor-btn.selected{border-color:var(--dourado);}
 .cor-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
 
-.pagto-opcoes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.pagto-opcoes{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px;}
 .pagto-card{background:var(--cinza2);border:2px solid var(--cinza3);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;text-align:center;}
 .pagto-card:hover{border-color:var(--roxo-light);}
 .pagto-card.selected{border-color:var(--dourado);background:rgba(217,119,6,0.1);}
 .pagto-valor{font-family:var(--fonte-display);font-size:26px;color:var(--dourado-light);}
 .pagto-label{font-size:12px;color:var(--texto2);margin-top:4px;}
+
+.aviso-prazo{background:linear-gradient(135deg,rgba(217,119,6,0.18),rgba(236,72,153,0.10));border:1px solid var(--dourado);border-radius:12px;padding:14px 18px;margin:0 16px 14px;display:flex;align-items:flex-start;gap:12px;}
+.aviso-prazo-icon{font-size:24px;flex-shrink:0;}
+.aviso-prazo-txt{flex:1;}
+.aviso-prazo-titulo{font-family:var(--fonte-cond);font-size:14px;letter-spacing:1px;color:var(--dourado-light);text-transform:uppercase;margin-bottom:4px;}
+.aviso-prazo-desc{font-size:13px;color:var(--texto2);line-height:1.5;}
+
+.devedor-item{background:var(--cinza2);border:1px solid #7f1d1d;border-radius:10px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+.devedor-nome{font-family:var(--fonte-cond);font-size:16px;letter-spacing:0.5px;}
+.devedor-cod{font-size:11px;color:var(--texto2);margin-top:2px;}
+.devedor-saldo{font-family:var(--fonte-display);font-size:24px;color:#f87171;text-align:right;}
+.devedor-label{font-size:11px;color:var(--texto2);text-align:right;letter-spacing:1px;text-transform:uppercase;}
+
+.parcela2-box{background:rgba(107,33,168,0.15);border:1px solid var(--roxo-light);border-radius:12px;padding:18px;margin-top:16px;}
+.parcela2-titulo{font-family:var(--fonte-cond);font-size:16px;letter-spacing:1px;color:#a78bfa;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.badge-p2{background:rgba(248,113,113,0.2);color:#f87171;border:1px solid #f87171;border-radius:12px;font-size:11px;padding:2px 8px;letter-spacing:1px;}
+.badge-aprovando{background:rgba(96,165,250,0.2);color:#60a5fa;border:1px solid #60a5fa;border-radius:12px;font-size:11px;padding:2px 8px;letter-spacing:1px;}
+.badge-quitado-p2{background:rgba(74,222,128,0.2);color:#4ade80;border:1px solid #4ade80;border-radius:12px;font-size:11px;padding:2px 8px;letter-spacing:1px;}
 
 .qr-box{background:var(--cinza2);border-radius:12px;padding:24px;text-align:center;margin:16px 0;}
 .qr-wrapper{background:#fff;border-radius:10px;padding:16px;display:inline-block;margin-bottom:12px;}
@@ -163,6 +181,15 @@ select option{background:var(--cinza2);}
 </style>
 </head>
 <body>
+
+<!-- AVISO PRAZO -->
+<div class="aviso-prazo" id="aviso-prazo">
+  <div class="aviso-prazo-icon">📅</div>
+  <div class="aviso-prazo-txt">
+    <div class="aviso-prazo-titulo">Prazo de pedidos encerra em breve!</div>
+    <div class="aviso-prazo-desc">Recebimento de pedidos até <strong style="color:var(--dourado-light);">17 ou 18 de junho</strong> · Entrega prevista em <strong style="color:var(--dourado-light);">30 dias</strong> após o fechamento</div>
+  </div>
+</div>
 
 <div class="header">
   <div class="header-inner">
@@ -256,14 +283,11 @@ select option{background:var(--cinza2);}
         <span style="font-size:13px;color:var(--texto2);">Total:</span>
         <span id="valor-calc" style="font-family:var(--fonte-display);font-size:32px;color:var(--dourado-light);margin-left:8px;">R$ 25,00</span>
       </div>
+      <div style="background:rgba(217,119,6,0.08);border:1px solid var(--dourado);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--dourado-light);">⚠️ No momento estamos aceitando apenas <strong>pagamento à vista (parcela única)</strong>.</div>
       <div class="pagto-opcoes">
-        <div class="pagto-card" onclick="selecionarPagto(this,'1x')" id="p-1x">
-          <div class="pagto-valor">R$ 25</div>
-          <div class="pagto-label">À vista (1×)</div>
-        </div>
-        <div class="pagto-card" onclick="selecionarPagto(this,'2x')" id="p-2x">
-          <div class="pagto-valor">2× R$ 12,50</div>
-          <div class="pagto-label">Parcelado</div>
+        <div class="pagto-card selected" onclick="selecionarPagto(this,'1x')" id="p-1x">
+          <div class="pagto-valor" id="pagto-valor-display">R$ 25</div>
+          <div class="pagto-label">Pagamento único (à vista)</div>
         </div>
       </div>
     </div>
@@ -320,17 +344,49 @@ select option{background:var(--cinza2);}
 <!-- PÁGINA: MEU PEDIDO -->
 <div class="page" id="page-meu-pedido">
   <div class="card">
-    <div class="card-title"><div class="dot"></div>Buscar meu pedido</div>
+    <div class="card-title"><div class="dot"></div>Consultar meu pedido</div>
+    <p style="font-size:13px;color:var(--texto2);margin-bottom:14px;">Informe seu código para ver o status, saldo devedor e pagar a parcela restante.</p>
     <div class="form-group">
       <label>Código do pedido</label>
       <input type="text" id="inp-codigo" placeholder="Ex: IC-2025-0001" style="text-transform:uppercase;letter-spacing:2px;"/>
     </div>
-    <button class="btn btn-primary" onclick="buscarPedido()">Buscar pedido</button>
+    <button class="btn btn-primary" onclick="buscarPedido()">🔍 Consultar saldo</button>
   </div>
   <div id="resultado-pedido" style="display:none;">
     <div class="card">
       <div class="card-title"><div class="dot"></div>Detalhes do pedido</div>
       <div id="pedido-detalhe"></div>
+    </div>
+    <!-- ÁREA DE PAGAMENTO 2ª PARCELA -->
+    <div id="area-parcela2" style="display:none;">
+      <div class="parcela2-box">
+        <div class="parcela2-titulo">💸 Pagar parcela restante <span class="badge-p2" id="badge-p2-status">Pendente</span></div>
+        <div id="p2-pix-info" style="margin-bottom:14px;">
+          <p style="font-size:13px;color:var(--texto2);margin-bottom:10px;">Faça o pagamento via PIX e anexe o comprovante abaixo.</p>
+          <div class="qr-box" style="padding:16px;">
+            <div class="qr-wrapper"><div id="qrcode-p2"></div></div>
+            <div class="pix-key-display">📱 (81) 98471-6376</div>
+            <button class="copy-btn" id="btn-copy-p2" onclick="copiarChaveP2()">Copiar chave PIX</button>
+            <p style="font-size:12px;color:var(--texto2);margin-top:10px;">Valor a pagar: <strong id="p2-valor-label" style="color:var(--dourado-light);"></strong></p>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Anexar comprovante do pagamento</label>
+          <div class="upload-area" id="upload-area-p2" onclick="document.getElementById('file-input-p2').click()">
+            <div class="upload-icon" id="upload-icon-p2">📎</div>
+            <div class="upload-text" id="upload-text-p2">Toque para selecionar o comprovante<br/><span style="font-size:11px;opacity:0.6">JPG, PNG ou PDF</span></div>
+            <img id="preview-img-p2" class="preview-img" style="display:none;"/>
+          </div>
+          <input type="file" id="file-input-p2" accept="image/*,application/pdf" onchange="previewFileP2(this)" style="display:none;"/>
+        </div>
+        <button class="btn btn-primary" id="btn-enviar-p2" onclick="enviarParcela2()">Enviar comprovante da 2ª parcela ✓</button>
+      </div>
+    </div>
+    <div id="area-p2-analise" style="display:none;margin-top:16px;">
+      <div class="parcela2-box" style="background:rgba(59,130,246,0.1);border-color:#60a5fa;">
+        <div class="parcela2-titulo" style="color:#60a5fa;">⏳ Comprovante em análise <span class="badge-aprovando">Aguardando</span></div>
+        <p style="font-size:13px;color:var(--texto2);">Seu comprovante da 2ª parcela foi enviado e está sendo verificado pelo administrador. Assim que aprovado, seu pedido será marcado como <strong>Quitado</strong>.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -368,6 +424,7 @@ select option{background:var(--cinza2);}
 
   <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none;">
     <button class="btn btn-primary btn-sm" onclick="adminTab('pedidos',this)" id="atab-pedidos">Pedidos</button>
+    <button class="btn btn-secondary btn-sm" onclick="adminTab('devedores',this)" id="atab-devedores">Devedores</button>
     <button class="btn btn-secondary btn-sm" onclick="adminTab('dashboard',this)" id="atab-dashboard">Dashboard</button>
     <button class="btn btn-secondary btn-sm" onclick="adminTab('exportar',this)" id="atab-exportar">Exportar</button>
   </div>
@@ -382,6 +439,20 @@ select option{background:var(--cinza2);}
       <button class="btn btn-secondary btn-sm" onclick="filtrarStatus('recusado')" id="f-recusado">Recusado</button>
     </div>
     <div id="lista-pedidos"></div>
+  </div>
+
+  <!-- TAB DEVEDORES -->
+  <div id="atab-content-devedores" style="display:none;">
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title"><div class="dot"></div>Lista de Devedores</div>
+      <div id="resumo-devedores" style="margin-bottom:14px;"></div>
+    </div>
+    <div id="lista-devedores"></div>
+    <!-- Parcelas 2 pendentes de aprovação -->
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title" style="color:#60a5fa;"><div class="dot" style="background:#60a5fa;"></div>Comprovantes 2ª Parcela — Aguardando aprovação</div>
+      <div id="lista-parcela2-pendente"></div>
+    </div>
   </div>
 
   <!-- TAB DASHBOARD -->
@@ -441,14 +512,15 @@ const PIX_CHAVE = '81984716376';
 const PRECO = 25;
 
 let pedidos = JSON.parse(localStorage.getItem('ic_pedidos') || 'null') || gerarDadosDemo();
-let selectedModelo = '', selectedCor = '', selectedPagto = '', comprovanteData = '';
+let selectedModelo = '', selectedCor = '', selectedPagto = '1x', comprovanteData = '', comprovanteP2Data = '';
 let adminLogado = false, filtroAtual = 'todos';
+let pedidoAtualConsulta = null;
 
 function gerarDadosDemo(){
   return [
-    {codigo:'IC-2025-0001',nome:'João Silva',numero:'10',tamanho:'M',modelo:'Casa',cor:'Roxa',qtd:1,total:25,pagamento:'2x',valorPago:12.5,saldo:12.5,status:'aprovado',comprovante:'',data:'27/03/2025',historico:[{data:'27/03/2025',acao:'Pedido enviado'},{data:'27/03/2025',acao:'Pagamento aprovado'}]},
-    {codigo:'IC-2025-0002',nome:'Maria Santos',numero:'7',tamanho:'P',modelo:'Fora',cor:'Rosa',qtd:1,total:25,pagamento:'1x',valorPago:25,saldo:0,status:'quitado',comprovante:'',data:'27/03/2025',historico:[{data:'27/03/2025',acao:'Pedido enviado'},{data:'27/03/2025',acao:'Quitado — pagamento completo'}]},
-    {codigo:'IC-2025-0003',nome:'Pedro Costa',numero:'1',tamanho:'G',modelo:'Goleiro',cor:'Preta',qtd:1,total:25,pagamento:'1x',valorPago:0,saldo:25,status:'analise',comprovante:'',data:'27/03/2025',historico:[{data:'27/03/2025',acao:'Pedido enviado — aguardando aprovação'}]}
+    {codigo:'IC-2025-0001',nome:'João Silva',numero:'10',tamanho:'M',modelo:'Casa',cor:'Roxa',qtd:1,total:25,pagamento:'1x',valorPago:12.5,saldo:12.5,status:'aprovado',comprovante:'',comprovante2:'',parcela2Status:'pendente',data:'27/03/2025',historico:[{data:'27/03/2025',acao:'Pedido enviado'},{data:'27/03/2025',acao:'Pagamento aprovado'}]},
+    {codigo:'IC-2025-0002',nome:'Maria Santos',numero:'7',tamanho:'P',modelo:'Fora',cor:'Rosa',qtd:1,total:25,pagamento:'1x',valorPago:25,saldo:0,status:'quitado',comprovante:'',comprovante2:'',parcela2Status:'quitado',data:'27/03/2025',historico:[{data:'27/03/2025',acao:'Pedido enviado'},{data:'27/03/2025',acao:'Quitado — pagamento completo'}]},
+    {codigo:'IC-2025-0003',nome:'Pedro Costa',numero:'1',tamanho:'G',modelo:'Goleiro',cor:'Preta',qtd:1,total:25,pagamento:'1x',valorPago:0,saldo:25,status:'analise',comprovante:'',comprovante2:'',parcela2Status:'pendente',data:'27/03/2025',historico:[{data:'27/03/2025',acao:'Pedido enviado — aguardando aprovação'}]}
   ];
 }
 
@@ -471,8 +543,18 @@ function showPage(id){
 function selecionarModelo(el,nome){ document.querySelectorAll('.modelo-card').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); selectedModelo=nome; atualizarValor(); }
 function selecionarCor(el,cor){ document.querySelectorAll('.cor-btn').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); selectedCor=cor; }
 function selecionarPagto(el,tipo){ document.querySelectorAll('.pagto-card').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); selectedPagto=tipo; }
-function atualizarValor(){ const qtd=parseInt(document.getElementById('inp-qtd').value)||1; document.getElementById('valor-calc').textContent='R$ '+(qtd*PRECO).toFixed(2).replace('.',','); }
+function atualizarValor(){
+  const qtd=parseInt(document.getElementById('inp-qtd').value)||1;
+  const total=qtd*PRECO;
+  document.getElementById('valor-calc').textContent='R$ '+total.toFixed(2).replace('.',',');
+  document.getElementById('pagto-valor-display').textContent='R$ '+total.toFixed(2).replace('.',',');
+  selectedPagto='1x';
+  const p1x=document.getElementById('p-1x');
+  if(p1x) p1x.classList.add('selected');
+}
 document.getElementById('inp-qtd').addEventListener('input',atualizarValor);
+// Pre-select 1x on load
+window.addEventListener('load',()=>{const p1x=document.getElementById('p-1x');if(p1x)p1x.classList.add('selected');});
 
 // PIX
 function irParaPagamento(){
@@ -484,15 +566,14 @@ function irParaPagamento(){
   if(!nome){toast('Informe seu nome');return;}
   if(!numero){toast('Informe o número da camisa');return;}
   if(!tamanho){toast('Escolha o tamanho');return;}
-  if(!selectedPagto){toast('Escolha a forma de pagamento');return;}
   const qtd=parseInt(document.getElementById('inp-qtd').value)||1;
   const total=qtd*PRECO;
-  const valorParcela=selectedPagto==='2x'?total/2:total;
-  document.getElementById('pix-valor').textContent='R$ '+valorParcela.toFixed(2).replace('.',',');
-  document.getElementById('pix-parcela').textContent=selectedPagto==='2x'?'1ª de 2 parcelas':'Pagamento único';
+  selectedPagto='1x';
+  document.getElementById('pix-valor').textContent='R$ '+total.toFixed(2).replace('.',',');
+  document.getElementById('pix-parcela').textContent='Pagamento único';
   document.getElementById('form-pedido').style.display='none';
   document.getElementById('tela-pix').style.display='block';
-  gerarQR(valorParcela, nome);
+  gerarQR(total, nome);
 }
 
 function gerarQR(valor, nome){
@@ -547,17 +628,18 @@ function enviarPedido(){
   if(!comprovanteData){toast('Anexe o comprovante de pagamento');return;}
   const qtd=parseInt(document.getElementById('inp-qtd').value)||1;
   const total=qtd*PRECO;
-  const valorPago=selectedPagto==='2x'?total/2:total;
   const cod='IC-2025-'+String(pedidos.length+1).padStart(4,'0');
   pedidos.push({
     codigo:cod,nome:document.getElementById('inp-nome').value.trim(),
     numero:document.getElementById('inp-numero').value,
     tamanho:document.getElementById('inp-tamanho').value,
-    modelo:selectedModelo,cor:selectedCor,qtd,total,pagamento:selectedPagto,
-    valorPago,saldo:total-valorPago,status:'analise',
+    modelo:selectedModelo,cor:selectedCor,qtd,total,pagamento:'1x',
+    valorPago:total,saldo:0,status:'analise',
     comprovante:comprovanteData,
+    comprovante2:'',
+    parcela2Status:'quitado',
     data:new Date().toLocaleDateString('pt-BR'),
-    historico:[{data:new Date().toLocaleDateString('pt-BR'),acao:'Pedido enviado — aguardando aprovação'}]
+    historico:[{data:new Date().toLocaleDateString('pt-BR'),acao:'Pedido enviado — aguardando aprovação (pagamento único)'}]
   });
   salvar();
   document.getElementById('cod-pedido').textContent=cod;
@@ -588,7 +670,12 @@ function buscarPedido(){
   const p=pedidos.find(x=>x.codigo===cod);
   const div=document.getElementById('resultado-pedido');
   const det=document.getElementById('pedido-detalhe');
+  const areaP2=document.getElementById('area-parcela2');
+  const areaP2Analise=document.getElementById('area-p2-analise');
+  areaP2.style.display='none';
+  areaP2Analise.style.display='none';
   if(!p){det.innerHTML='<p style="color:#f87171;text-align:center;padding:20px;">Pedido não encontrado.</p>';div.style.display='block';return;}
+  pedidoAtualConsulta=p;
   const sm={analise:'Em análise',aprovado:'Aprovado',pendente:'Pendente',quitado:'Quitado',recusado:'Recusado'};
   det.innerHTML=`
     <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;">
@@ -605,15 +692,71 @@ function buscarPedido(){
       <span><div style="font-size:11px;color:var(--texto2);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Modelo</div><strong>${p.modelo}</strong></span>
       <span><div style="font-size:11px;color:var(--texto2);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Cor</div><strong>${p.cor}</strong></span>
       <span><div style="font-size:11px;color:var(--texto2);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Tamanho</div><strong>${p.tamanho}</strong></span>
-      <span><div style="font-size:11px;color:var(--texto2);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Pagamento</div><strong>${p.pagamento}</strong></span>
+      <span><div style="font-size:11px;color:var(--texto2);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Pagamento</div><strong>${p.pagamento||'1x'}</strong></span>
     </div>
-    ${p.saldo>0&&p.status==='aprovado'?`<div style="background:rgba(217,119,6,0.1);border:1px solid var(--dourado);border-radius:10px;padding:14px;margin-bottom:14px;"><p style="font-size:13px;color:var(--dourado-light);">⚠️ Você ainda tem <strong>R$ ${p.saldo.toFixed(2).replace('.',',')}</strong> a pagar (2ª parcela)</p><p style="font-size:12px;color:var(--texto2);margin-top:6px;">Chave PIX: (81) 98471-6376</p></div>`:''}
     <div style="border-top:1px solid var(--cinza3);padding-top:12px;">
       <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--texto2);margin-bottom:8px;">Histórico</p>
       ${(p.historico||[]).map(h=>`<p style="font-size:13px;margin-bottom:6px;color:var(--texto2);">📌 <span style="color:var(--texto);">${h.acao}</span> — ${h.data}</p>`).join('')}
     </div>
   `;
   div.style.display='block';
+  // Mostrar área de 2ª parcela se tem saldo e está aprovado
+  if(p.saldo>0 && p.status==='aprovado'){
+    const p2s=p.parcela2Status||'pendente';
+    if(p2s==='analise'){
+      areaP2Analise.style.display='block';
+    } else if(p2s==='pendente'){
+      areaP2.style.display='block';
+      document.getElementById('p2-valor-label').textContent='R$ '+p.saldo.toFixed(2).replace('.',',');
+      document.getElementById('badge-p2-status').textContent='Pendente';
+      document.getElementById('badge-p2-status').className='badge-p2';
+      // Gerar QR para o saldo
+      document.getElementById('qrcode-p2').innerHTML='';
+      const payload=gerarPixPayload(PIX_CHAVE, p.saldo.toFixed(2), p.nome.substring(0,25));
+      try{ new QRCode(document.getElementById('qrcode-p2'),{text:payload,width:160,height:160,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
+    }
+  }
+}
+
+function copiarChaveP2(){
+  navigator.clipboard.writeText(PIX_CHAVE).then(()=>{
+    const btn=document.getElementById('btn-copy-p2');
+    btn.textContent='✓ Copiado!';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copiar chave PIX';btn.classList.remove('copied');},2500);
+  }).catch(()=>toast('Chave PIX: '+PIX_CHAVE));
+}
+
+function previewFileP2(input){
+  const file=input.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    comprovanteP2Data=e.target.result;
+    document.getElementById('upload-area-p2').classList.add('has-file');
+    if(file.type.startsWith('image/')){
+      const img=document.getElementById('preview-img-p2');
+      img.src=comprovanteP2Data;img.style.display='block';
+    }
+    document.getElementById('upload-icon-p2').textContent='✅';
+    document.getElementById('upload-text-p2').textContent=file.name;
+  };
+  reader.readAsDataURL(file);
+}
+
+function enviarParcela2(){
+  if(!comprovanteP2Data){toast('Anexe o comprovante de pagamento');return;}
+  if(!pedidoAtualConsulta){toast('Pedido não encontrado');return;}
+  const p=pedidos.find(x=>x.codigo===pedidoAtualConsulta.codigo);
+  if(!p){toast('Pedido não encontrado');return;}
+  p.comprovante2=comprovanteP2Data;
+  p.parcela2Status='analise';
+  p.historico.push({data:new Date().toLocaleDateString('pt-BR'),acao:'Comprovante da 2ª parcela enviado — aguardando aprovação do admin'});
+  salvar();
+  toast('✓ Comprovante enviado! Aguardando verificação.');
+  comprovanteP2Data='';
+  // Mostrar tela de análise
+  document.getElementById('area-parcela2').style.display='none';
+  document.getElementById('area-p2-analise').style.display='block';
 }
 
 // ADMIN
@@ -631,11 +774,104 @@ function loginAdmin(){
 function logoutAdmin(){adminLogado=false;document.getElementById('inp-senha').value='';showPage('admin-gate');}
 
 function adminTab(tab,btn){
-  ['pedidos','dashboard','exportar'].forEach(t=>{
+  ['pedidos','devedores','dashboard','exportar'].forEach(t=>{
     document.getElementById('atab-content-'+t).style.display=t===tab?'block':'none';
     document.getElementById('atab-'+t).className=t===tab?'btn btn-primary btn-sm':'btn btn-secondary btn-sm';
   });
   if(tab==='dashboard') renderDashboard();
+  if(tab==='devedores') renderDevedores();
+}
+
+function renderDevedores(){
+  const devedores=pedidos.filter(p=>p.saldo>0 && p.status==='aprovado');
+  const totalDevido=devedores.reduce((s,p)=>s+p.saldo,0);
+  // Resumo
+  document.getElementById('resumo-devedores').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div style="background:rgba(248,113,113,0.1);border:1px solid #f87171;border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-family:var(--fonte-display);font-size:32px;color:#f87171;">${devedores.length}</div>
+        <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--texto2);margin-top:4px;">Devedores</div>
+      </div>
+      <div style="background:rgba(248,113,113,0.1);border:1px solid #f87171;border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-family:var(--fonte-display);font-size:28px;color:#f87171;">R$${totalDevido.toFixed(2).replace('.',',')}</div>
+        <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--texto2);margin-top:4px;">Total em aberto</div>
+      </div>
+    </div>
+  `;
+  // Lista de devedores
+  const lista=document.getElementById('lista-devedores');
+  if(!devedores.length){
+    lista.innerHTML='<p style="text-align:center;padding:20px;color:var(--texto2);">✅ Nenhum devedor! Todos quitados.</p>';
+  } else {
+    lista.innerHTML=devedores.map(p=>`
+      <div class="devedor-item">
+        <div>
+          <div class="devedor-nome">${p.nome} <span style="color:var(--texto2);font-weight:400;">#${p.numero}</span></div>
+          <div class="devedor-cod">${p.codigo} · ${p.tamanho} · ${p.modelo}</div>
+          <div style="margin-top:6px;">
+            <span class="status-badge" style="background:rgba(248,113,113,0.15);color:#f87171;border:1px solid #b91c1c;">${p.parcela2Status==='analise'?'Comprovante enviado':'Aguardando pagamento'}</span>
+          </div>
+        </div>
+        <div>
+          <div class="devedor-saldo">R$${p.saldo.toFixed(2).replace('.',',')}</div>
+          <div class="devedor-label">em aberto</div>
+          ${p.parcela2Status==='analise'?`<button class="btn btn-success btn-sm" style="margin-top:8px;width:100%;" onclick="aprovarParcela2('${p.codigo}')">✓ Aprovar pgto</button>`:`<button class="btn btn-secondary btn-sm" style="margin-top:8px;width:100%;" onclick="registrarPagamento('${p.codigo}')">+ Reg. pgto</button>`}
+        </div>
+      </div>
+    `).join('');
+  }
+  // Comprovantes de 2ª parcela pendentes
+  const pendentes2=pedidos.filter(p=>p.parcela2Status==='analise' && p.comprovante2);
+  const listP2=document.getElementById('lista-parcela2-pendente');
+  if(!pendentes2.length){
+    listP2.innerHTML='<p style="text-align:center;padding:16px;color:var(--texto2);font-size:13px;">Nenhum comprovante pendente no momento.</p>';
+  } else {
+    listP2.innerHTML=pendentes2.map(p=>`
+      <div style="background:rgba(59,130,246,0.08);border:1px solid #60a5fa;border-radius:10px;padding:14px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+          <div>
+            <div style="font-family:var(--fonte-cond);font-size:15px;">${p.nome} <span style="color:var(--texto2);">#${p.numero}</span></div>
+            <div style="font-size:12px;color:var(--texto2);margin-top:2px;">${p.codigo} · Saldo: <strong style="color:#f87171;">R$ ${p.saldo.toFixed(2).replace('.',',')}</strong></div>
+          </div>
+          <span class="badge-aprovando">Aguardando</span>
+        </div>
+        ${p.comprovante2&&p.comprovante2.startsWith('data:image')?`<img src="${p.comprovante2}" class="comprovante-thumb" style="margin-top:10px;" onclick="verComprovanteP2('${p.codigo}')"/><span style="font-size:11px;color:var(--texto2);margin-left:8px;vertical-align:middle;">ver comprovante</span>`:p.comprovante2?`<div style="margin-top:10px;font-size:12px;color:var(--texto2);">📄 Comprovante PDF</div>`:''}
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn btn-success btn-sm" onclick="aprovarParcela2('${p.codigo}')">✓ Aprovar</button>
+          <button class="btn btn-danger btn-sm" onclick="recusarParcela2('${p.codigo}')">✗ Recusar</button>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+function aprovarParcela2(cod){
+  const p=pedidos.find(x=>x.codigo===cod);
+  if(!p)return;
+  p.valorPago=p.total;
+  p.saldo=0;
+  p.status='quitado';
+  p.parcela2Status='quitado';
+  p.historico.push({data:new Date().toLocaleDateString('pt-BR'),acao:'2ª parcela aprovada pelo admin — pedido QUITADO'});
+  salvar();renderDevedores();renderListaPedidos();renderDashboard();
+  toast('✓ 2ª parcela aprovada! Pedido quitado.');
+}
+
+function recusarParcela2(cod){
+  const p=pedidos.find(x=>x.codigo===cod);
+  if(!p)return;
+  p.parcela2Status='pendente';
+  p.comprovante2='';
+  p.historico.push({data:new Date().toLocaleDateString('pt-BR'),acao:'Comprovante da 2ª parcela recusado — envie outro'});
+  salvar();renderDevedores();
+  toast('Comprovante da 2ª parcela recusado.');
+}
+
+function verComprovanteP2(cod){
+  const p=pedidos.find(x=>x.codigo===cod);
+  if(!p||!p.comprovante2)return;
+  const w=window.open();
+  w.document.write(`<body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="${p.comprovante2}" style="max-width:100%;max-height:100vh;"/></body>`);
 }
 
 function filtrarStatus(status){
@@ -678,7 +914,7 @@ function renderListaPedidos(){
 
 function aprovarPedido(cod){const p=pedidos.find(x=>x.codigo===cod);if(!p)return;p.status='aprovado';p.historico.push({data:new Date().toLocaleDateString('pt-BR'),acao:'Pagamento aprovado pelo admin'});salvar();renderListaPedidos();toast('✓ Pedido aprovado!');}
 function recusarPedido(cod){const p=pedidos.find(x=>x.codigo===cod);if(!p)return;p.status='recusado';p.historico.push({data:new Date().toLocaleDateString('pt-BR'),acao:'Comprovante recusado — envie outro'});salvar();renderListaPedidos();toast('Pedido recusado.');}
-function marcarQuitado(cod){const p=pedidos.find(x=>x.codigo===cod);if(!p)return;p.status='quitado';p.saldo=0;p.valorPago=p.total;p.historico.push({data:new Date().toLocaleDateString('pt-BR'),acao:'Marcado como quitado — pagamento completo'});salvar();renderListaPedidos();renderDashboard();toast('✓ Quitado!');}
+function marcarQuitado(cod){const p=pedidos.find(x=>x.codigo===cod);if(!p)return;p.status='quitado';p.saldo=0;p.valorPago=p.total;p.parcela2Status='quitado';p.historico.push({data:new Date().toLocaleDateString('pt-BR'),acao:'Marcado como quitado — pagamento completo'});salvar();renderListaPedidos();renderDashboard();toast('✓ Quitado!');}
 
 function registrarPagamento(cod){
   const p=pedidos.find(x=>x.codigo===cod);if(!p)return;
