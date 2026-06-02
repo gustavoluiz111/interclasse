@@ -1,4 +1,4 @@
-import { ref, push, get, update, remove, set } from "firebase/database";
+import { ref, push, get, update, remove, set, query, orderByChild, equalTo } from "firebase/database";
 import emailjs from "@emailjs/browser";
 import { db } from "./config";
 
@@ -93,10 +93,11 @@ export const fetchOrders = async () => {
 
 // ─── Fetch Single Order by Codigo ──────────────────────────────────────────────
 export const fetchOrderByCodigo = async (codigo) => {
-  const snap = await get(ordersRef());
+  const q = query(ordersRef(), orderByChild('codigo'), equalTo(codigo));
+  const snap = await get(q);
   if (!snap.exists()) return null;
   const data = snap.val();
-  const entry = Object.entries(data).find(([, v]) => v.codigo === codigo);
+  const entry = Object.entries(data)[0];
   return entry ? { id: entry[0], ...entry[1] } : null;
 };
 
@@ -186,13 +187,13 @@ export const deleteAllOrders = async () => {
 };
 
 // ─── Upload Comprovante (PDF apenas) ──────────────────────────────────────────
-// PDFs de comprovante PIX são sempre pequenos (<300KB) — sem necessidade de compressão
 export const uploadComprovante = async (codigo, base64Pdf) => {
   try {
-    const snap = await get(ref(db, 'orders'));
+    const q = query(ordersRef(), orderByChild('codigo'), equalTo(codigo));
+    const snap = await get(q);
     if (snap.exists()) {
       const data = snap.val();
-      const entry = Object.entries(data).find(([, v]) => v.codigo === codigo);
+      const entry = Object.entries(data)[0];
       if (entry) {
         await update(ref(db, `orders/${entry[0]}`), {
           comprovanteUrl: base64Pdf,
@@ -203,26 +204,17 @@ export const uploadComprovante = async (codigo, base64Pdf) => {
     return base64Pdf;
   } catch (err) {
     console.warn('Falha ao salvar comprovante PDF:', err.message);
-    try {
-      const snap = await get(ref(db, 'orders'));
-      if (snap.exists()) {
-        const data = snap.val();
-        const entry = Object.entries(data).find(([, v]) => v.codigo === codigo);
-        if (entry) {
-          await update(ref(db, `orders/${entry[0]}`), { comprovanteAnexado: false });
-        }
-      }
-    } catch (_) {}
     return null;
   }
 };
 
 // ─── Upload Comprovante 2ª Parcela ──────────────────────────────────────────────
 export const uploadComprovante2 = async (codigo, base64) => {
-  const snap = await get(ref(db, 'orders'));
+  const q = query(ordersRef(), orderByChild('codigo'), equalTo(codigo));
+  const snap = await get(q);
   if (snap.exists()) {
     const data = snap.val();
-    const entry = Object.entries(data).find(([, v]) => v.codigo === codigo);
+    const entry = Object.entries(data)[0];
     if (entry) {
       const now = new Date().toLocaleDateString('pt-BR');
       const historico = [...(entry[1].historico || []), {
