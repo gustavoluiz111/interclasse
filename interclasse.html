@@ -978,6 +978,19 @@ function renderDashboard(){
     
   const totalAReceber = pedidosValidos.reduce((s, p) => s + (parseFloat(p.saldo) || 0), 0);
   
+  // Camisas por Status
+  const camisasQuitadas = pedidosValidos
+    .filter(p => p.status === 'quitado')
+    .reduce((s, p) => s + (parseInt(p.qtd) || 1), 0);
+    
+  const camisasDevedores = pedidosValidos
+    .filter(p => p.status === 'aprovado' && p.saldo > 0)
+    .reduce((s, p) => s + (parseInt(p.qtd) || 1), 0);
+    
+  const camisasAnalise = pedidosValidos
+    .filter(p => p.status === 'analise')
+    .reduce((s, p) => s + (parseInt(p.qtd) || 1), 0);
+  
   // Render Financeiro Grid
   document.getElementById('stats-grid-financeiro').innerHTML = `
     <div class="stat-card">
@@ -998,15 +1011,23 @@ function renderDashboard(){
     </div>
   `;
   
-  // Render Producao Grid
+  // Render Producao Grid (4 cards de camisas)
   document.getElementById('stats-grid-producao').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-num amarelo">${totalPedidos}</div>
-      <div class="stat-label">Pedidos Válidos</div>
+    <div class="stat-card" style="border-left: 3px solid var(--roxo-light)">
+      <div class="stat-num" style="color:var(--branco)">${totalCamisas}</div>
+      <div class="stat-label">Total Camisas</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-num verde" style="color:var(--roxo-light)">${totalCamisas}</div>
-      <div class="stat-label">Total de Camisas</div>
+    <div class="stat-card" style="border-left: 3px solid #4ade80">
+      <div class="stat-num verde">${camisasQuitadas}</div>
+      <div class="stat-label">Camisas Pagas</div>
+    </div>
+    <div class="stat-card" style="border-left: 3px solid #f87171">
+      <div class="stat-num vermelho">${camisasDevedores}</div>
+      <div class="stat-label">Devedores</div>
+    </div>
+    <div class="stat-card" style="border-left: 3px solid var(--dourado-light)">
+      <div class="stat-num amarelo">${camisasAnalise}</div>
+      <div class="stat-label">Em Análise</div>
     </div>
   `;
 
@@ -1101,9 +1122,12 @@ function renderDashboard(){
     `🟡 Em Análise (PIX): R$ ${totalEmAnalise.toFixed(2).replace('.', ',')}`,
     `🔴 Restante a Receber: R$ ${totalAReceber.toFixed(2).replace('.', ',')}`,
     ``,
-    `👕 *PRODUÇÃO GERAL:*`,
+    `👕 *PRODUÇÃO & STATUS:*`,
     `📦 Total de Pedidos: ${totalPedidos}`,
     `👕 Total de Camisas: ${totalCamisas} unidades`,
+    `   • Pagas (Quitadas): ${camisasQuitadas} un.`,
+    `   • Devedores (Com Saldo): ${camisasDevedores} un.`,
+    `   • Em Análise (PIX): ${camisasAnalise} un.`,
     ``,
     `📂 *POR MODELO:*`,
     ...Object.entries(porModelo).map(([m, n]) => `  • ${m.padEnd(8)}: ${n} camisa(s)`),

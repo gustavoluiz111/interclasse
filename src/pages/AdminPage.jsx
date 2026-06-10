@@ -164,6 +164,25 @@ export default function AdminPage() {
   const aReceber = validOrders.reduce((acc, o) => acc + (parseFloat(o.saldo) || 0), 0);
   const quitados = validOrders.filter(o => o.status === 'quitado').length;
 
+  // Camisas por Status
+  const camisasQuitadas = validOrders
+    .filter(o => o.status === 'quitado')
+    .reduce((acc, o) => acc + (o.camisas && o.camisas.length > 0 
+      ? o.camisas.reduce((sum, c) => sum + (parseInt(c.qtd) || 1), 0)
+      : (parseInt(o.qtd) || 1)), 0);
+
+  const camisasDevedores = validOrders
+    .filter(o => o.status === 'aprovado' && o.saldo > 0)
+    .reduce((acc, o) => acc + (o.camisas && o.camisas.length > 0 
+      ? o.camisas.reduce((sum, c) => sum + (parseInt(c.qtd) || 1), 0)
+      : (parseInt(o.qtd) || 1)), 0);
+
+  const camisasAnalise = validOrders
+    .filter(o => o.status === 'analise')
+    .reduce((acc, o) => acc + (o.camisas && o.camisas.length > 0 
+      ? o.camisas.reduce((sum, c) => sum + (parseInt(c.qtd) || 1), 0)
+      : (parseInt(o.qtd) || 1)), 0);
+
   // Charts Math
   const modelCount = {};
   const numberCount = {};
@@ -236,9 +255,12 @@ export default function AdminPage() {
       `🟡 Em Análise (PIX): R$ ${arrecadadoAnalise.toFixed(2).replace('.', ',')}`,
       `🔴 Restante a Receber: R$ ${aReceber.toFixed(2).replace('.', ',')}`,
       ``,
-      `👕 *PRODUÇÃO GERAL:*`,
+      `👕 *PRODUÇÃO & STATUS:*`,
       `📦 Total de Pedidos: ${totalPedidos}`,
       `👕 Total de Camisas: ${totalCamisas} unidades`,
+      `   • Pagas (Quitadas): ${camisasQuitadas} un.`,
+      `   • Devedores (Com Saldo): ${camisasDevedores} un.`,
+      `   • Em Análise (PIX): ${camisasAnalise} un.`,
       ``,
       `📂 *POR MODELO:*`,
       ...modelData.map(m => `  • ${m.name.padEnd(16)}: ${m.value} camisa(s)`),
@@ -552,7 +574,19 @@ export default function AdminPage() {
               </div>
               <div className="card" style={{ textAlign: 'center', marginBottom: 0, border: '1px solid rgba(147,51,234,0.2)' }}>
                 <div style={{ fontSize: 36, fontFamily: 'var(--fonte-display)', color: '#a78bfa' }}>{totalCamisas}</div>
-                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--texto2)', marginTop: 4 }}>Unidades de Camisas</div>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--texto2)', marginTop: 4 }}>Total de Camisas</div>
+              </div>
+              <div className="card" style={{ textAlign: 'center', marginBottom: 0, border: '1px solid rgba(74,222,128,0.25)', background: 'rgba(74,222,128,0.04)' }}>
+                <div style={{ fontSize: 36, fontFamily: 'var(--fonte-display)', color: '#4ade80' }}>{camisasQuitadas}</div>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--texto2)', marginTop: 4 }}>Camisas Pagas</div>
+              </div>
+              <div className="card" style={{ textAlign: 'center', marginBottom: 0, border: '1px solid rgba(248,113,113,0.25)', background: 'rgba(248,113,113,0.04)' }}>
+                <div style={{ fontSize: 36, fontFamily: 'var(--fonte-display)', color: '#f87171' }}>{camisasDevedores}</div>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--texto2)', marginTop: 4 }}>Devedores</div>
+              </div>
+              <div className="card" style={{ textAlign: 'center', marginBottom: 0, border: '1px solid rgba(251,191,36,0.25)', background: 'rgba(251,191,36,0.04)', gridColumn: '1 / -1' }}>
+                <div style={{ fontSize: 36, fontFamily: 'var(--fonte-display)', color: '#fbbf24' }}>{camisasAnalise}</div>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--texto2)', marginTop: 4 }}>Em Análise (aguardando aprovação)</div>
               </div>
             </div>
           </div>
