@@ -143,25 +143,118 @@ export default function AdminPage() {
   const filteredOrders = filter === 'todos' ? orders : orders.filter(o => o.status === filter);
 
   // Stats
-  const arrecadado = orders.reduce((acc, o) => acc + o.valorPago, 0);
-  const aReceber = orders.reduce((acc, o) => acc + o.saldo, 0);
+  // Filtrar pedidos válidos (desconsidera recusados)
+  const validOrders = orders.filter(o => o.status !== 'recusado');
+
+  // Stats Financeiras Corretas
+  const totalPedidos = validOrders.length;
+  const totalCamisas = validOrders.reduce((acc, o) => {
+    return acc + (o.camisas && o.camisas.length > 0 
+      ? o.camisas.reduce((sum, c) => sum + (parseInt(c.qtd) || 1), 0)
+      : (parseInt(o.qtd) || 1));
+  }, 0);
+  
+  const totalPrevisto = validOrders.reduce((acc, o) => acc + (parseFloat(o.total) || 0), 0);
+  const arrecadadoConfirmado = validOrders
+    .filter(o => o.status === 'aprovado' || o.status === 'quitado')
+    .reduce((acc, o) => acc + (parseFloat(o.valorPago) || 0), 0);
+  const arrecadadoAnalise = validOrders
+    .filter(o => o.status === 'analise')
+    .reduce((acc, o) => acc + (parseFloat(o.valorPago) || 0), 0);
+  const aReceber = validOrders.reduce((acc, o) => acc + (parseFloat(o.saldo) || 0), 0);
+  const quitados = validOrders.filter(o => o.status === 'quitado').length;
 
   // Charts Math
   const modelCount = {};
   const numberCount = {};
-  orders.forEach(o => {
+  const colorCount = {};
+  const sizeCount = {};
+
+  validOrders.forEach(o => {
     (o.camisas || []).forEach(c => {
-      const key = `${c.modelo} (${c.cor})`;
-      modelCount[key] = (modelCount[key] || 0) + (parseInt(c.qtd) || 1);
+      // Modelos
+      const mKey = `${c.modelo} (${c.cor})`;
+      modelCount[mKey] = (modelCount[mKey] || 0) + (parseInt(c.qtd) || 1);
+      
+      // Cores
+      colorCount[c.cor] = (colorCount[c.cor] || 0) + (parseInt(c.qtd) || 1);
+      
+      // Tamanhos
+      sizeCount[c.tamanho] = (sizeCount[c.tamanho] || 0) + (parseInt(c.qtd) || 1);
+
+      // Números
       if (c.numero) {
         numberCount[c.numero] = (numberCount[c.numero] || 0) + (parseInt(c.qtd) || 1);
       }
     });
+
+    // Se o pedido for do tipo legacy (sem array camisas)
+    if (!o.camisas || o.camisas.length === 0) {
+      const q = parseInt(o.qtd) || 1;
+      if (o.modelo) {
+        const mKey = `${o.modelo} (${o.cor || 'Sem Cor'})`;
+        modelCount[mKey] = (modelCount[mKey] || 0) + q;
+      }
+      if (o.cor) {
+        colorCount[o.cor] = (colorCount[o.cor] || 0) + q;
+      }
+      if (o.tamanho) {
+        sizeCount[o.tamanho] = (sizeCount[o.tamanho] || 0) + q;
+      }
+      if (o.numero) {
+        numberCount[o.numero] = (numberCount[o.numero] || 0) + q;
+      }
+    }
   });
 
   const modelData = Object.keys(modelCount).map(k => ({ name: k, value: modelCount[k] })).sort((a,b) => b.value - a.value);
   const numberData = Object.keys(numberCount).map(k => ({ name: k, value: numberCount[k] })).sort((a,b) => b.value - a.value).slice(0, 10);
+  const colorData = Object.keys(colorCount).map(k => ({ name: k, value: colorCount[k] })).sort((a,b) => b.value - a.value);
+  
+  const sizeOrdem = ['PP', 'P', 'M', 'G', 'GG', 'XG', '4A', '6A', '8A', '10A', '12A'];
+  const sizeData = Object.keys(sizeCount).map(k => ({ name: k, value: sizeCount[k] })).sort((a, b) => {
+    const idxA = sizeOrdem.indexOf(a.name);
+    const idxB = sizeOrdem.indexOf(b.name);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    return a.name.localeCompare(b.name);
+  });
+
   const COLORS = ['#9333EA', '#DB2777', '#F59E0B', '#3B82F6', '#10B981', '#6366F1'];
+
+  // Função para copiar Relatório do WhatsApp
+  const handleCopyWhatsappReport = () => {
+    const reportText = [
+      `📊 *RELATÓRIO DE VENDAS & FINANCEIRO* 📊`,
+      `================================`,
+      `📅 Gerado em: ${new Date().toLocaleDateString('pt-BR')}`,
+      ``,
+      `💰 *FINANÇAS GERAIS:*`,
+      `💵 Previsto Total: R$ ${totalPrevisto.toFixed(2).replace('.', ',')}`,
+      `🟢 Confirmado Caixa: R$ ${arrecadadoConfirmado.toFixed(2).replace('.', ',')}`,
+      `🟡 Em Análise (PIX): R$ ${arrecadadoAnalise.toFixed(2).replace('.', ',')}`,
+      `🔴 Restante a Receber: R$ ${aReceber.toFixed(2).replace('.', ',')}`,
+      ``,
+      `👕 *PRODUÇÃO GERAL:*`,
+      `📦 Total de Pedidos: ${totalPedidos}`,
+      `👕 Total de Camisas: ${totalCamisas} unidades`,
+      ``,
+      `📂 *POR MODELO:*`,
+      ...modelData.map(m => `  • ${m.name.padEnd(16)}: ${m.value} camisa(s)`),
+      ``,
+      `🎨 *POR COR:*`,
+      ...colorData.map(c => `  • ${c.name.padEnd(12)}: ${c.value} unidade(s)`),
+      ``,
+      `📐 *POR TAMANHO:*`,
+      ...sizeData.map(s => `  • ${s.name.padEnd(8)}: ${s.value} unidade(s)`),
+      `================================`
+    ].join('\n');
+
+    navigator.clipboard.writeText(reportText)
+      .then(() => alert("✓ Relatório copiado para a área de transferência!"))
+      .catch(() => alert("Erro ao copiar. Tente novamente."));
+  };
 
   return (
     <div className="container" style={{ maxWidth: 800, margin: '0 auto', padding: '20px 16px', paddingBottom: 80 }}>
@@ -421,39 +514,102 @@ export default function AdminPage() {
       )}
 
       {tab === 'dashboard' && (
-        <div className="animate-fade-in">
-          <div className="grid-2" style={{ marginBottom: 20 }}>
-            <div className="card" style={{ textAlign: 'center', marginBottom: 0 }}>
-              <div style={{ fontSize: 40, fontFamily: 'var(--fonte-display)', color: '#4ade80' }}>R$ {arrecadado.toFixed(0)}</div>
-              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: 'var(--texto2)' }}>Total Arrecadado</div>
+        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Seção Financeira */}
+          <div>
+            <div style={{ fontFamily: 'var(--fonte-cond)', fontSize: 13, letterSpacing: 1, color: 'var(--texto2)', textTransform: 'uppercase', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ color: 'var(--dourado-light)' }}>💵</span> Resumo Financeiro Geral
             </div>
-            <div className="card" style={{ textAlign: 'center', marginBottom: 0 }}>
-              <div style={{ fontSize: 40, fontFamily: 'var(--fonte-display)', color: '#f87171' }}>R$ {aReceber.toFixed(0)}</div>
-              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: 'var(--texto2)' }}>A Receber (Saldo)</div>
-            </div>
-            <div className="card" style={{ textAlign: 'center', marginBottom: 0 }}>
-              <div style={{ fontSize: 40, fontFamily: 'var(--fonte-display)', color: 'var(--dourado-light)' }}>{orders.length}</div>
-              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: 'var(--texto2)' }}>Qtd de Pedidos</div>
-            </div>
-            <div className="card" style={{ textAlign: 'center', marginBottom: 0 }}>
-              <div style={{ fontSize: 40, fontFamily: 'var(--fonte-display)' }}>{orders.filter(o => o.status === 'quitado').length}</div>
-              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: 'var(--texto2)' }}>Pedidos Quitados</div>
+            <div className="grid-2" style={{ gap: 12, marginBottom: 12 }}>
+              <div className="card" style={{ textAlign: 'center', marginBottom: 0, background: 'linear-gradient(135deg, rgba(217,119,6,0.06), rgba(107,33,168,0.1))', border: '1px solid rgba(217,119,6,0.2)' }}>
+                <div style={{ fontSize: 36, fontFamily: 'var(--fonte-display)', color: 'var(--dourado-light)' }}>R$ {totalPrevisto.toFixed(2).replace('.', ',')}</div>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--texto2)', marginTop: 4 }}>Previsto Total</div>
+              </div>
+              <div className="card" style={{ textAlign: 'center', marginBottom: 0, background: 'linear-gradient(135deg, rgba(74,222,128,0.06), rgba(22,163,74,0.1))', border: '1px solid rgba(74,222,128,0.2)' }}>
+                <div style={{ fontSize: 36, fontFamily: 'var(--fonte-display)', color: '#4ade80' }}>R$ {arrecadadoConfirmado.toFixed(2).replace('.', ',')}</div>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--texto2)', marginTop: 4 }}>Arrecadado Confirmado</div>
+              </div>
+              <div className="card" style={{ textAlign: 'center', marginBottom: 0, background: 'linear-gradient(135deg, rgba(59,130,246,0.06), rgba(29,78,216,0.1))', border: '1px solid rgba(59,130,246,0.2)' }}>
+                <div style={{ fontSize: 36, fontFamily: 'var(--fonte-display)', color: '#60a5fa' }}>R$ {arrecadadoAnalise.toFixed(2).replace('.', ',')}</div>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--texto2)', marginTop: 4 }}>Em Análise (PIX)</div>
+              </div>
+              <div className="card" style={{ textAlign: 'center', marginBottom: 0, background: 'linear-gradient(135deg, rgba(248,113,113,0.06), rgba(185,28,28,0.1))', border: '1px solid rgba(248,113,113,0.2)' }}>
+                <div style={{ fontSize: 36, fontFamily: 'var(--fonte-display)', color: '#f87171' }}>R$ {aReceber.toFixed(2).replace('.', ',')}</div>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--texto2)', marginTop: 4 }}>Saldo Restante</div>
+              </div>
             </div>
           </div>
 
-          <div className="grid-2">
+          {/* Seção Produção */}
+          <div>
+            <div style={{ fontFamily: 'var(--fonte-cond)', fontSize: 13, letterSpacing: 1, color: 'var(--texto2)', textTransform: 'uppercase', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ color: 'var(--roxo-light)' }}>👕</span> Estatísticas de Camisas
+            </div>
+            <div className="grid-2" style={{ gap: 12, marginBottom: 12 }}>
+              <div className="card" style={{ textAlign: 'center', marginBottom: 0 }}>
+                <div style={{ fontSize: 36, fontFamily: 'var(--fonte-display)', color: 'var(--dourado-light)' }}>{totalPedidos}</div>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--texto2)', marginTop: 4 }}>Pedidos Válidos</div>
+              </div>
+              <div className="card" style={{ textAlign: 'center', marginBottom: 0, border: '1px solid rgba(147,51,234,0.2)' }}>
+                <div style={{ fontSize: 36, fontFamily: 'var(--fonte-display)', color: '#a78bfa' }}>{totalCamisas}</div>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--texto2)', marginTop: 4 }}>Unidades de Camisas</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Gráficos Grid */}
+          <div className="grid-2" style={{ gap: 12 }}>
             {/* Pie Chart: Modelos */}
             <div className="card" style={{ marginBottom: 0 }}>
-               <h3 className="card-title" style={{ fontSize: 13 }}><div className="dot" /> Modelos Mais Pedidos</h3>
+               <h3 className="card-title" style={{ fontSize: 13 }}><div className="dot" /> Modelos Pedidos</h3>
                {modelData.length > 0 ? (
                  <div style={{ width: '100%', height: 260 }}>
                    <ResponsiveContainer>
                      <PieChart>
-                       <Pie data={modelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} fill="#8884d8" label={({name, value}) => `${name}: ${value}`}>
+                       <Pie data={modelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} fill="#8884d8" label={({name, value}) => `${name.split(' ')[0]}: ${value}`}>
                          {modelData.map((entry, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
                        </Pie>
                        <Tooltip contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: 8 }} itemStyle={{ color: '#fff' }} />
                      </PieChart>
+                   </ResponsiveContainer>
+                 </div>
+               ) : <p style={{color: 'var(--texto2)'}}>Sem dados</p>}
+            </div>
+
+            {/* Bar Chart: Cores */}
+            <div className="card" style={{ marginBottom: 0 }}>
+               <h3 className="card-title" style={{ fontSize: 13 }}><div className="dot" /> Camisas por Cor</h3>
+               {colorData.length > 0 ? (
+                 <div style={{ width: '100%', height: 260 }}>
+                   <ResponsiveContainer>
+                     <BarChart data={colorData} layout="vertical" margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
+                       <XAxis type="number" stroke="rgba(255,255,255,0.4)" fontSize={11} allowDecimals={false} />
+                       <YAxis dataKey="name" type="category" stroke="rgba(255,255,255,0.4)" fontSize={11} tickMargin={5} width={60} />
+                       <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: 8 }} />
+                       <Bar dataKey="value" fill="#EC4899" radius={[0,4,4,0]} name="Camisas">
+                         {colorData.map((entry, index) => {
+                           const dots = { Roxa: '#6B21A8', Rosa: '#EC4899', Preta: '#333', Azul: '#1D4ED8', Dourada: '#D97706', Branca: '#FAFAFA' };
+                           return <Cell key={`cell-${index}`} fill={dots[entry.name] || '#888'} />;
+                         })}
+                       </Bar>
+                     </BarChart>
+                   </ResponsiveContainer>
+                 </div>
+               ) : <p style={{color: 'var(--texto2)'}}>Sem dados</p>}
+            </div>
+
+            {/* Bar Chart: Tamanhos */}
+            <div className="card" style={{ marginBottom: 0 }}>
+               <h3 className="card-title" style={{ fontSize: 13 }}><div className="dot" /> Demanda por Tamanho</h3>
+               {sizeData.length > 0 ? (
+                 <div style={{ width: '100%', height: 260 }}>
+                   <ResponsiveContainer>
+                     <BarChart data={sizeData} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
+                       <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" fontSize={11} />
+                       <YAxis stroke="rgba(255,255,255,0.4)" fontSize={11} allowDecimals={false} />
+                       <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: 8 }} />
+                       <Bar dataKey="value" fill="#3B82F6" radius={[4,4,0,0]} name="Camisas" />
+                     </BarChart>
                    </ResponsiveContainer>
                  </div>
                ) : <p style={{color: 'var(--texto2)'}}>Sem dados</p>}
@@ -466,8 +622,8 @@ export default function AdminPage() {
                  <div style={{ width: '100%', height: 260 }}>
                    <ResponsiveContainer>
                      <BarChart data={numberData} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
-                       <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" fontSize={12} tickMargin={10} />
-                       <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} allowDecimals={false} />
+                       <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" fontSize={11} tickMargin={10} />
+                       <YAxis stroke="rgba(255,255,255,0.4)" fontSize={11} allowDecimals={false} />
                        <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: 8 }} />
                        <Bar dataKey="value" fill="#F59E0B" radius={[4,4,0,0]} name="Pedidos" />
                      </BarChart>
@@ -475,6 +631,15 @@ export default function AdminPage() {
                  </div>
                ) : <p style={{color: 'var(--texto2)'}}>Sem dados</p>}
             </div>
+          </div>
+
+          {/* Relatório WhatsApp */}
+          <div className="card" style={{ border: '1px solid var(--dourado)', background: 'rgba(217,119,6,0.03)' }}>
+            <h3 className="card-title" style={{ color: 'var(--dourado-light)' }}><div className="dot" style={{ background: 'var(--dourado)' }} /> Relatório Resumido para WhatsApp</h3>
+            <p style={{ color: 'var(--texto2)', fontSize: 12, marginBottom: 12 }}>Copie o relatório financeiro e estatístico estruturado com um único clique para enviar no grupo da classe.</p>
+            <button className="btn btn-primary" style={{ background: 'linear-gradient(135deg, var(--dourado), var(--dourado-light))', color: '#000', fontWeight: 'bold' }} onClick={handleCopyWhatsappReport}>
+               📋 Copiar Relatório Completo
+            </button>
           </div>
         </div>
       )}

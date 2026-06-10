@@ -457,18 +457,36 @@ select option{background:var(--cinza2);}
 
   <!-- TAB DASHBOARD -->
   <div id="atab-content-dashboard" style="display:none;">
-    <div class="stats-grid" id="stats-grid"></div>
+    <div style="font-family:var(--fonte-cond);font-size:13px;letter-spacing:1px;color:var(--texto2);text-transform:uppercase;margin-bottom:12px;font-weight:600;display:flex;align-items:center;gap:6px;">
+      <span style="color:var(--dourado-light);">💵</span> Resumo Financeiro Geral
+    </div>
+    <div class="stats-grid" id="stats-grid-financeiro" style="grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;"></div>
+    
+    <div style="font-family:var(--fonte-cond);font-size:13px;letter-spacing:1px;color:var(--texto2);text-transform:uppercase;margin-bottom:12px;font-weight:600;display:flex;align-items:center;gap:6px;">
+      <span style="color:var(--roxo-light);">👕</span> Estatísticas de Camisas
+    </div>
+    <div class="stats-grid" id="stats-grid-producao" style="grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;"></div>
+
     <div class="card">
       <div class="card-title"><div class="dot"></div>Por modelo</div>
       <div id="stats-modelos"></div>
     </div>
+    
     <div class="card">
       <div class="card-title"><div class="dot"></div>Por tamanho</div>
       <div id="stats-tamanhos"></div>
     </div>
+    
     <div class="card">
       <div class="card-title"><div class="dot"></div>Por cor</div>
       <div id="stats-cores"></div>
+    </div>
+    
+    <div class="card" style="border:1px solid var(--dourado); background:rgba(217,119,6,0.03);">
+      <div class="card-title" style="color:var(--dourado-light);"><div class="dot" style="background:var(--dourado);"></div>Relatório Resumido para WhatsApp</div>
+      <p style="font-size:12px;color:var(--texto2);margin-bottom:10px;">Copie este resumo detalhado para enviar no grupo da turma:</p>
+      <textarea id="relatorio-copia-txt" readonly style="font-family:monospace;font-size:12px;height:180px;background:var(--cinza2);color:var(--texto);border:1px solid var(--cinza3);resize:none;margin-bottom:12px;padding:10px;width:100%;border-radius:8px;outline:none;"></textarea>
+      <button class="btn btn-primary" id="btn-copiar-relatorio" onclick="copiarRelatorioTexto()" style="background:linear-gradient(135deg, var(--dourado), var(--dourado-light));color:var(--preto);">Copiar Relatório</button>
     </div>
   </div>
 
@@ -943,38 +961,181 @@ function verComprovante(cod){const p=pedidos.find(x=>x.codigo===cod);if(!p||!p.c
 
 // DASHBOARD
 function renderDashboard(){
-  const total=pedidos.length;
-  const arrecadado=pedidos.reduce((s,p)=>s+p.valorPago,0);
-  const aReceber=pedidos.reduce((s,p)=>s+p.saldo,0);
-  const quitados=pedidos.filter(p=>p.status==='quitado').length;
-  document.getElementById('stats-grid').innerHTML=`
-    <div class="stat-card"><div class="stat-num amarelo">${total}</div><div class="stat-label">Total pedidos</div></div>
-    <div class="stat-card"><div class="stat-num verde">R$${arrecadado.toFixed(0)}</div><div class="stat-label">Arrecadado</div></div>
-    <div class="stat-card"><div class="stat-num vermelho">R$${aReceber.toFixed(0)}</div><div class="stat-label">A receber</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--dourado-light);">${quitados}</div><div class="stat-label">Quitados</div></div>
+  const pedidosValidos = pedidos.filter(p => p.status !== 'recusado');
+  
+  // Financeiro
+  const totalPedidos = pedidosValidos.length;
+  const totalCamisas = pedidosValidos.reduce((s, p) => s + (parseInt(p.qtd) || 1), 0);
+  const totalPrevisto = pedidosValidos.reduce((s, p) => s + (parseFloat(p.total) || 0), 0);
+  
+  const totalArrecadado = pedidosValidos
+    .filter(p => p.status === 'aprovado' || p.status === 'quitado')
+    .reduce((s, p) => s + (parseFloat(p.valorPago) || 0), 0);
+    
+  const totalEmAnalise = pedidosValidos
+    .filter(p => p.status === 'analise')
+    .reduce((s, p) => s + (parseFloat(p.valorPago) || 0), 0);
+    
+  const totalAReceber = pedidosValidos.reduce((s, p) => s + (parseFloat(p.saldo) || 0), 0);
+  
+  // Render Financeiro Grid
+  document.getElementById('stats-grid-financeiro').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-num" style="color:var(--dourado-light)">R$ ${totalPrevisto.toFixed(2).replace('.', ',')}</div>
+      <div class="stat-label">Previsto Total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num verde">R$ ${totalArrecadado.toFixed(2).replace('.', ',')}</div>
+      <div class="stat-label">Arrecadado</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num amarelo">R$ ${totalEmAnalise.toFixed(2).replace('.', ',')}</div>
+      <div class="stat-label">Em Análise</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num vermelho">R$ ${totalAReceber.toFixed(2).replace('.', ',')}</div>
+      <div class="stat-label">A Receber</div>
+    </div>
   `;
-  const porModelo={Casa:0,Fora:0,Goleiro:0};
-  pedidos.forEach(p=>{if(porModelo[p.modelo]!==undefined)porModelo[p.modelo]++;});
-  document.getElementById('stats-modelos').innerHTML=Object.entries(porModelo).map(([m,n])=>`
+  
+  // Render Producao Grid
+  document.getElementById('stats-grid-producao').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-num amarelo">${totalPedidos}</div>
+      <div class="stat-label">Pedidos Válidos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num verde" style="color:var(--roxo-light)">${totalCamisas}</div>
+      <div class="stat-label">Total de Camisas</div>
+    </div>
+  `;
+
+  // Por modelo (correto usando p.qtd)
+  const porModelo = { Casa: 0, Fora: 0, Goleiro: 0 };
+  pedidosValidos.forEach(p => {
+    const q = parseInt(p.qtd) || 1;
+    if (porModelo[p.modelo] !== undefined) porModelo[p.modelo] += q;
+  });
+  
+  document.getElementById('stats-modelos').innerHTML = Object.entries(porModelo).map(([m, n]) => `
     <div style="margin-bottom:14px;">
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>${m}</span><span style="color:var(--dourado-light);">${n} pedido${n!==1?'s':''}</span></div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${total?Math.round(n/total*100):0}%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+        <span>${m}</span>
+        <span style="color:var(--dourado-light);">${n} camisa${n !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${totalCamisas ? Math.round(n / totalCamisas * 100) : 0}%"></div>
+      </div>
     </div>
   `).join('');
-  const porTam={P:0,M:0,G:0,GG:0};
-  pedidos.forEach(p=>{if(porTam[p.tamanho]!==undefined)porTam[p.tamanho]++;});
-  document.getElementById('stats-tamanhos').innerHTML=Object.entries(porTam).map(([t,n])=>`
-    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--cinza3);font-size:14px;"><span style="font-family:var(--fonte-cond);letter-spacing:1px;">${t}</span><strong style="color:var(--dourado-light);">${n}</strong></div>
-  `).join('');
-  const coresMap={};
-  pedidos.forEach(p=>{coresMap[p.cor]=(coresMap[p.cor]||0)+1;});
-  const corDots={Roxa:'#6B21A8',Rosa:'#EC4899',Preta:'#444',Azul:'#1D4ED8',Dourada:'#D97706',Branca:'#ddd'};
-  document.getElementById('stats-cores').innerHTML=Object.entries(coresMap).map(([c,n])=>`
+
+  // Por tamanho (dinâmico e correto)
+  const porTam = {};
+  pedidosValidos.forEach(p => {
+    const q = parseInt(p.qtd) || 1;
+    if (p.tamanho) {
+      porTam[p.tamanho] = (porTam[p.tamanho] || 0) + q;
+    }
+  });
+  
+  // Ordenar os tamanhos de forma amigável (PP, P, M, G, GG, XG, e infantis)
+  const ordemTamanhos = ['PP', 'P', 'M', 'G', 'GG', 'XG', '4A', '6A', '8A', '10A', '12A'];
+  const tamanhosOrdenados = Object.entries(porTam).sort((a, b) => {
+    const idxA = ordemTamanhos.indexOf(a[0]);
+    const idxB = ordemTamanhos.indexOf(b[0]);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    return a[0].localeCompare(b[0]);
+  });
+
+  document.getElementById('stats-tamanhos').innerHTML = `
+    <table style="width:100%; border-collapse:collapse; font-size:14px; text-align:left;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--cinza3); color: var(--texto2);">
+          <th style="padding: 8px 0;">Tamanho</th>
+          <th style="padding: 8px 0; text-align:right;">Quantidade (Unidades)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${tamanhosOrdenados.length === 0 ? `<tr><td colspan="2" style="padding:10px 0; text-align:center; color:var(--texto2);">Nenhuma camisa</td></tr>` : 
+          tamanhosOrdenados.map(([t, n]) => `
+            <tr style="border-bottom: 1px solid var(--cinza2);">
+              <td style="padding: 8px 0; font-family:var(--fonte-cond); letter-spacing:1px; font-weight:600;">${t}</td>
+              <td style="padding: 8px 0; text-align:right; color:var(--dourado-light); font-weight:bold;">${n} camisas</td>
+            </tr>
+          `).join('')
+        }
+      </tbody>
+    </table>
+  `;
+
+  // Por cor (dinâmico e correto)
+  const porCor = {};
+  pedidosValidos.forEach(p => {
+    const q = parseInt(p.qtd) || 1;
+    if (p.cor) {
+      porCor[p.cor] = (porCor[p.cor] || 0) + q;
+    }
+  });
+  
+  const corDots = { Roxa: '#6B21A8', Rosa: '#EC4899', Preta: '#333', Azul: '#1D4ED8', Dourada: '#D97706', Branca: '#FAFAFA' };
+  
+  document.getElementById('stats-cores').innerHTML = Object.entries(porCor).map(([c, n]) => `
     <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--cinza3);font-size:14px;">
-      <div style="width:14px;height:14px;border-radius:50%;background:${corDots[c]||'#888'};flex-shrink:0;"></div>
-      <span style="flex:1;">${c}</span><strong style="color:var(--dourado-light);">${n}</strong>
+      <div style="width:14px;height:14px;border-radius:50%;background:${corDots[c] || '#888'};border:1px solid #555;flex-shrink:0;"></div>
+      <span style="flex:1;">${c}</span>
+      <strong style="color:var(--dourado-light);">${n} un.</strong>
     </div>
   `).join('');
+
+  // Gerar Relatório Texto para WhatsApp
+  const txtRelatorio = [
+    `📊 *RELATÓRIO FINANCEIRO & VENDAS* 📊`,
+    `================================`,
+    `📅 Atualizado em: ${new Date().toLocaleDateString('pt-BR')}`,
+    ``,
+    `💰 *FINANÇAS GERAIS:*`,
+    `💵 Previsto Total: R$ ${totalPrevisto.toFixed(2).replace('.', ',')}`,
+    `🟢 Confirmado Caixa: R$ ${totalArrecadado.toFixed(2).replace('.', ',')}`,
+    `🟡 Em Análise (PIX): R$ ${totalEmAnalise.toFixed(2).replace('.', ',')}`,
+    `🔴 Restante a Receber: R$ ${totalAReceber.toFixed(2).replace('.', ',')}`,
+    ``,
+    `👕 *PRODUÇÃO GERAL:*`,
+    `📦 Total de Pedidos: ${totalPedidos}`,
+    `👕 Total de Camisas: ${totalCamisas} unidades`,
+    ``,
+    `📂 *POR MODELO:*`,
+    ...Object.entries(porModelo).map(([m, n]) => `  • ${m.padEnd(8)}: ${n} camisa(s)`),
+    ``,
+    `🎨 *POR COR:*`,
+    ...Object.entries(porCor).map(([c, n]) => `  • ${c.padEnd(8)}: ${n} unidade(s)`),
+    ``,
+    `📐 *POR TAMANHO:*`,
+    ...tamanhosOrdenados.map(([t, n]) => `  • ${t.padEnd(8)}: ${n} unidade(s)`),
+    `================================`
+  ].join('\n');
+
+  document.getElementById('relatorio-copia-txt').value = txtRelatorio;
+}
+
+function copiarRelatorioTexto() {
+  const textarea = document.getElementById('relatorio-copia-txt');
+  textarea.select();
+  textarea.setSelectionRange(0, 99999);
+  
+  navigator.clipboard.writeText(textarea.value).then(() => {
+    const btn = document.getElementById('btn-copiar-relatorio');
+    const oldTxt = btn.textContent;
+    btn.textContent = '✓ Relatório Copiado!';
+    btn.style.background = '#10B981';
+    btn.style.color = '#fff';
+    setTimeout(() => {
+      btn.textContent = oldTxt;
+      btn.style.background = '';
+      btn.style.color = '';
+    }, 2500);
+  }).catch(() => toast('Erro ao copiar relatório. Selecione o texto e copie manualmente.'));
 }
 
 // EXPORTAR
