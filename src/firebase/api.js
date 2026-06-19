@@ -269,3 +269,22 @@ export const recusarParcela2 = async (id) => {
     historico
   });
 };
+
+// ─── Fetch Settings ───────────────────────────────────────────────────────────
+export const fetchSettings = async () => {
+  try {
+    const snap = await get(ref(db, 'settings'));
+    if (!snap.exists()) return { ordersLocked: false };
+    return snap.val();
+  } catch (err) {
+    console.error("Erro ao buscar configurações no Firebase:", err);
+    return { ordersLocked: false };
+  }
+};
+
+// ─── Update Settings ──────────────────────────────────────────────────────────
+export const updateSettings = async (newSettings) => {
+  await update(ref(db, 'settings'), newSettings);
+  return true;
+};
+

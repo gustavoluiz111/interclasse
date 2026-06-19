@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
 import {
   CheckCircle2, ChevronRight, Copy, Upload, ArrowLeft,
   Search, Plus, Trash2, Ticket, AlertCircle, Lock
 } from 'lucide-react';
-import { createOrder, uploadComprovante, fetchOrderByCodigo, uploadComprovante2 } from '../firebase/api';
+import { createOrder, uploadComprovante, fetchOrderByCodigo, uploadComprovante2, fetchSettings } from '../firebase/api';
 import { gerarPixPayload } from '../utils/pix';
 import Receipt from './Receipt';
 import Aurora from '../components/Aurora';
@@ -38,6 +38,7 @@ export default function ClientPage() {
   const [step, setStep]     = useState('menu'); // menu | order | pix | success | search
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState('');
+  const [ordersLocked, setOrdersLocked] = useState(false);
 
   // Customer (Buyer Details)
   const [compradorNome, setCompradorNome] = useState('');
@@ -68,6 +69,18 @@ export default function ClientPage() {
   // Size chart popup
   const [showSizeChart, setShowSizeChart] = useState(false);
 
+  useEffect(() => {
+    const checkSettings = async () => {
+      try {
+        const settings = await fetchSettings();
+        setOrdersLocked(!!settings.ordersLocked);
+      } catch (err) {
+        console.error("Erro ao obter configurações:", err);
+      }
+    };
+    checkSettings();
+  }, []);
+
   // ── Shirt helpers ──────────────────────────────────────────────────────────
   const updateShirt = (i, k, v) =>
     setCamisas(p => p.map((s, idx) => idx === i ? { ...s, [k]: v } : s));
@@ -81,7 +94,14 @@ export default function ClientPage() {
   const valorPago = pagamento === '2x' ? total / 2 : total;
 
   // ── Navigation ─────────────────────────────────────────────────────────────
-  const goTo = (s) => { setError(''); setStep(s); };
+  const goTo = (s) => {
+    if (s === 'order' && ordersLocked) {
+      setError('Novos pedidos suspensos temporariamente.');
+      return;
+    }
+    setError('');
+    setStep(s);
+  };
 
   // ── Validate ──────────────────────────────────────────────────────────────
   const handleNext = () => {
@@ -116,6 +136,10 @@ export default function ClientPage() {
     setLoading(true);
     setError('');
     try {
+      const currentSettings = await fetchSettings();
+      if (currentSettings.ordersLocked) {
+        throw new Error('Novos pedidos foram suspensos temporariamente pela administração.');
+      }
       // Garante que numero sempre seja string
       const camisasNormalizadas = camisas.map(s => ({
         ...s,
@@ -342,13 +366,33 @@ export default function ClientPage() {
       {/* ─── MENU ────────────────────────────────────────────────────────────── */}
       {step === 'menu' && (
         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <button
-            className="btn btn-primary"
-            style={{ padding: '20px 24px', fontSize: 20, letterSpacing: 3 }}
-            onClick={() => goTo('order')}
-          >
-            👕 Fazer Pedido <ChevronRight size={22} />
-          </button>
+          {ordersLocked ? (
+            <div className="card" style={{
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(124, 58, 237, 0.05))',
+              border: '2px dashed rgba(239, 68, 68, 0.4)',
+              borderRadius: 14,
+              padding: '24px 20px',
+              textAlign: 'center',
+              boxShadow: '0 4px 20px rgba(239, 68, 68, 0.15)',
+              marginBottom: 4
+            }}>
+              <Lock size={32} color="#f87171" style={{ margin: '0 auto 12px' }} />
+              <div style={{ fontFamily: 'var(--fonte-cond)', fontSize: 18, color: '#fff', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>
+                Novos Pedidos Fechados
+              </div>
+              <p style={{ fontSize: 13, color: 'var(--texto2)', lineHeight: 1.5, margin: 0 }}>
+                O recebimento de novos pedidos está suspenso temporariamente. Se você já tem um pedido, pode consultá-lo clicando no botão de busca abaixo.
+              </p>
+            </div>
+          ) : (
+            <button
+              className="btn btn-primary"
+              style={{ padding: '20px 24px', fontSize: 20, letterSpacing: 3 }}
+              onClick={() => goTo('order')}
+            >
+              👕 Fazer Pedido <ChevronRight size={22} />
+            </button>
+          )}
           <button
             className="btn btn-secondary"
             style={{ padding: '18px 24px', fontSize: 16 }}

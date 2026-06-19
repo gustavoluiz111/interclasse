@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchOrders, updateOrderStatus, updateOrderPayment, deleteOrder, deleteAllOrders, updateOrderData, aprovarParcela2, recusarParcela2 } from '../firebase/api';
+import { fetchOrders, updateOrderStatus, updateOrderPayment, deleteOrder, deleteAllOrders, updateOrderData, aprovarParcela2, recusarParcela2, fetchSettings, updateSettings } from '../firebase/api';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase/config';
-import { RefreshCcw, LogOut, Download, AlertTriangle, CheckCircle } from 'lucide-react';
+import { RefreshCcw, LogOut, Download, AlertTriangle, CheckCircle, Lock, Unlock } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function AdminPage() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState({ ordersLocked: false });
   const [tab, setTab] = useState('pedidos');
   const [filter, setFilter] = useState('todos');
   const [viewingComprovante, setViewingComprovante] = useState(null);
@@ -22,10 +23,32 @@ export default function AdminPage() {
 
   const loadData = async () => {
     setLoading(true);
-    const data = await fetchOrders();
-    // Sort by newest first
-    setOrders(data.sort((a,b) => b.timestamp - a.timestamp));
+    try {
+      const data = await fetchOrders();
+      const currentSettings = await fetchSettings();
+      setSettings(currentSettings);
+      setOrders(data.sort((a,b) => b.timestamp - a.timestamp));
+    } catch (err) {
+      console.error("Erro ao carregar dados do administrador:", err);
+    }
     setLoading(false);
+  };
+
+  const handleToggleOrdersLock = async () => {
+    const nextState = !settings.ordersLocked;
+    const confirmMessage = nextState
+      ? "Bloquear novos pedidos para os clientes? Eles não poderão enviar novos formulários."
+      : "Liberar novos pedidos para os clientes? O formulário ficará aberto novamente.";
+
+    if (!window.confirm(confirmMessage)) return;
+
+    try {
+      await updateSettings({ ordersLocked: nextState });
+      setSettings({ ordersLocked: nextState });
+      alert("Configuração de pedidos atualizada com sucesso!");
+    } catch (err) {
+      alert("Erro ao salvar configuração: " + err.message);
+    }
   };
 
   const handleLogout = async () => {
@@ -290,6 +313,40 @@ export default function AdminPage() {
           <button className="btn btn-secondary btn-sm" onClick={loadData} disabled={loading}><RefreshCcw size={16} /></button>
           <button className="btn btn-danger btn-sm" onClick={handleLogout}><LogOut size={16} /></button>
         </div>
+      </div>
+
+      {/* Status de Pedidos / Trava */}
+      <div className="card" style={{ padding: '16px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid var(--roxo-light)', background: 'rgba(124,58,237,0.05)', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ fontSize: 24, display: 'flex', alignItems: 'center' }}>
+            {settings.ordersLocked ? <Lock size={24} color="#f87171" /> : <Unlock size={24} color="#4ade80" />}
+          </div>
+          <div>
+            <div style={{ fontWeight: 'bold', fontSize: 15, color: '#fff' }}>
+              Pedidos de Clientes: {settings.ordersLocked ? <span style={{ color: '#f87171' }}>BLOQUEADOS (TRAVADOS)</span> : <span style={{ color: '#4ade80' }}>LIBERADOS</span>}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--texto2)' }}>
+              {settings.ordersLocked ? 'Clientes NÃO conseguem enviar novos pedidos públicos' : 'Formulário de pedidos público está ativo e recebendo envios'}
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={handleToggleOrdersLock}
+          className="btn"
+          style={{
+            background: settings.ordersLocked ? 'rgba(74,222,128,0.15)' : 'rgba(239,68,68,0.15)',
+            border: settings.ordersLocked ? '1px solid #4ade80' : '1px solid #f87171',
+            color: settings.ordersLocked ? '#4ade80' : '#f87171',
+            padding: '8px 16px',
+            fontSize: 13,
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            borderRadius: 8,
+            transition: 'all 0.2s',
+          }}
+        >
+          {settings.ordersLocked ? '🔓 Liberar Pedidos' : '🔒 Travar Pedidos'}
+        </button>
       </div>
 
       {/* Tabs */}
